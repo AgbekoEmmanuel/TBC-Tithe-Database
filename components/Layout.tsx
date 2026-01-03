@@ -6,7 +6,7 @@ export const Layout: React.FC = () => {
   return (
     <div className="flex h-screen bg-[#1e1e2d]">
       <Sidebar />
-      <div className="flex-1 p-4 h-screen overflow-hidden">
+      <div className="flex-1 p-4 h-screen overflow-hidden ml-24 md:ml-0">
         <div className="floating-container p-8 animate-fade-in">
           {/* Header Area - Mimicking the reference */}
           <header className="flex justify-between items-center mb-10">

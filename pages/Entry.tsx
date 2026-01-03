@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useDataStore, useAuthStore } from '../store';
 import { Member, PaymentMethod, Transaction, Fellowship, FELLOWSHIP_PASTORS } from '../types';
-import { Search, Plus, Check, RotateCcw, User as UserIcon, Calendar, Save, UserPlus, X, Trash2 } from 'lucide-react';
+import { Search, Plus, Check, RotateCcw, User as UserIcon, Calendar, Save, UserPlus, X, Trash2, Filter } from 'lucide-react';
 
 export const Entry: React.FC = () => {
   const { members, transactions, activeBatchId, addTransaction, undoLastTransaction, addMember } = useDataStore();
@@ -17,24 +18,128 @@ export const Entry: React.FC = () => {
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberPhone, setNewMemberPhone] = useState('');
   const [newMemberFellowship, setNewMemberFellowship] = useState<Fellowship>(Fellowship.Thyatira);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  // Pending Filter State (Form)
+  const [filterMethod, setFilterMethod] = useState<PaymentMethod | 'ALL'>('ALL');
+  const [filterFellowship, setFilterFellowship] = useState<Fellowship | 'ALL'>('ALL');
+  const [filterMinAmount, setFilterMinAmount] = useState('');
+  const [filterMaxAmount, setFilterMaxAmount] = useState('');
+  const [filterStartDate, setFilterStartDate] = useState('');
+  const [filterEndDate, setFilterEndDate] = useState('');
+
+  // Applied Filter State (Table)
+  const [appliedFilters, setAppliedFilters] = useState({
+    method: 'ALL' as PaymentMethod | 'ALL',
+    fellowship: 'ALL' as Fellowship | 'ALL',
+    min: '',
+    max: '',
+    startDate: '',
+    endDate: ''
+  });
+
+  const itemsPerPage = 7;
+
+  // Pagination Logic
+  const filteredTransactions = transactions.filter(t => {
+    const matchesMethod = appliedFilters.method === 'ALL' || t.method === appliedFilters.method;
+    const matchesFellowship = appliedFilters.fellowship === 'ALL' || t.fellowship === appliedFilters.fellowship;
+
+    const amount = t.amount;
+    const min = appliedFilters.min ? parseFloat(appliedFilters.min) : 0;
+    const max = appliedFilters.max ? parseFloat(appliedFilters.max) : Infinity;
+    const matchesAmount = amount >= min && amount <= max;
+
+    const txnDate = t.timestamp.split('T')[0];
+    const matchesDate = (!appliedFilters.startDate || txnDate >= appliedFilters.startDate) &&
+      (!appliedFilters.endDate || txnDate <= appliedFilters.endDate);
+
+    return matchesMethod && matchesFellowship && matchesAmount && matchesDate;
+  });
+
+  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
+  const currentTransactions = filteredTransactions.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handleOpenFilter = () => {
+    if (!isFilterOpen) {
+      // Sync pending state with active applied state when opening
+      setFilterMethod(appliedFilters.method);
+      setFilterFellowship(appliedFilters.fellowship);
+      setFilterMinAmount(appliedFilters.min);
+      setFilterMaxAmount(appliedFilters.max);
+      setFilterStartDate(appliedFilters.startDate);
+      setFilterEndDate(appliedFilters.endDate);
+    }
+    setIsFilterOpen(!isFilterOpen);
+  };
+
+  const handleApplyFilter = () => {
+    setAppliedFilters({
+      method: filterMethod,
+      fellowship: filterFellowship,
+      min: filterMinAmount,
+      max: filterMaxAmount,
+      startDate: filterStartDate,
+      endDate: filterEndDate
+    });
+    setCurrentPage(1);
+    setIsFilterOpen(false);
+  };
+
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 4) {
+        pages.push(1, 2, 3, 4, 5, '...', totalPages);
+      } else if (currentPage >= totalPages - 3) {
+        pages.push(1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+      }
+    }
+    return pages;
+  };
+
+  // Filtered members
 
   // Refs for focus management
   const searchInputRef = useRef<HTMLInputElement>(null);
   const amountInputRef = useRef<HTMLInputElement>(null);
+  const filterWrapperRef = useRef<HTMLDivElement>(null);
+
+  // Click Outside Handler for Filter
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (filterWrapperRef.current && !filterWrapperRef.current.contains(event.target as Node)) {
+        setIsFilterOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [filterWrapperRef]);
 
   // Filtered members
   const filteredMembers = searchTerm.length > 1
     ? members.filter(m => m.name.toLowerCase().includes(searchTerm.toLowerCase()) || m.phone.includes(searchTerm))
     : [];
 
-  const handleQuickAdd = () => {
+  const handleQuickAdd = async () => {
     if (!newMemberName) return;
-    const newMember = addMember({
+    const newMember = await addMember({
       name: newMemberName,
       phone: newMemberPhone,
       fellowship: newMemberFellowship
     });
-    handleMemberSelect(newMember);
+
+    if (newMember) {
+      handleMemberSelect(newMember);
+    }
+
     setIsAddMemberOpen(false);
     // Reset form
     setNewMemberPhone('');
@@ -98,9 +203,9 @@ export const Entry: React.FC = () => {
   }, [undoLastTransaction]);
 
   return (
-    <div className="h-full flex flex-col md:flex-row gap-6 animate-fade-in pb-20">
+    <div className="h-full flex flex-col lg:flex-row gap-6 animate-fade-in pb-20">
       {/* Left Panel - Entry Form */}
-      <div className="w-full md:w-5/12 flex flex-col h-full glass-panel p-8 relative border-gray-200">
+      <div className="w-full lg:w-5/12 flex flex-col h-full glass-panel p-8 relative border-gray-200">
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-[#1e1e2d]">New Transaction</h2>
           <p className="text-gray-400 text-sm">Record a new tithe or offering</p>
@@ -176,9 +281,15 @@ export const Entry: React.FC = () => {
         </div>
 
         {/* Quick Add Modal */}
-        {isAddMemberOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
-            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden relative">
+        {isAddMemberOpen && createPortal(
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in"
+            onClick={() => setIsAddMemberOpen(false)}
+          >
+            <div
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden relative"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="bg-[#1e1e2d] px-8 py-6 flex justify-between items-center">
                 <h3 className="text-xl font-bold text-white">Add New Member</h3>
                 <button onClick={() => setIsAddMemberOpen(false)} className="text-white/50 hover:text-white transition-colors">
@@ -241,22 +352,24 @@ export const Entry: React.FC = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         {/* 2. Amount Input */}
         <div className="flex-1 flex flex-col justify-center mb-8 relative">
           <div className="absolute inset-0 bg-gradient-to-b from-indigo-50/30 to-transparent rounded-3xl -z-10 opacity-0 transition-opacity duration-500" style={{ opacity: selectedMember ? 1 : 0 }}></div>
           <label className="block text-sm font-bold text-slate-500 mb-6 text-center uppercase tracking-wider">2. Enter Amount</label>
-          <div className="relative flex items-center justify-center">
-            <span className={`text-5xl font-bold absolute left-8 top-1/2 -translate-y-1/2 transition-colors duration-300 ${amount ? 'text-indigo-300' : 'text-slate-200'}`}>GH₵</span>
+          <div className="flex items-center justify-center px-8">
+            <span className={`text-5xl font-bold transition-colors duration-300 mr-4 ${amount ? 'text-indigo-300' : 'text-slate-200'}`}>GH₵</span>
             <input
               ref={amountInputRef}
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-              className="w-full bg-transparent text-center text-8xl font-black text-indigo-900 focus:outline-none placeholder-slate-200 drop-shadow-sm"
+              onWheel={(e) => (e.target as HTMLInputElement).blur()}
+              className="flex-1 bg-transparent text-center text-8xl font-black text-indigo-900 focus:outline-none placeholder-slate-200 drop-shadow-sm min-w-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               placeholder="0.00"
               disabled={!selectedMember}
             />
@@ -295,7 +408,7 @@ export const Entry: React.FC = () => {
       </div>
 
       {/* RIGHT PANEL - FEED */}
-      <div className="w-full md:w-7/12 flex flex-col h-full">
+      <div className="w-full lg:w-7/12 flex flex-col h-full">
         {/* Stats Strip */}
         <div className="glass-card mb-6 p-1 flex justify-between items-center pr-2">
           <div className="flex-1 px-6 py-4">
@@ -304,14 +417,129 @@ export const Entry: React.FC = () => {
               GH₵{transactions.reduce((acc, t) => acc + t.amount, 0).toLocaleString()}
             </p>
           </div>
-          <div className="flex space-x-2 mr-2">
-            <button className="flex items-center space-x-2 px-5 py-3 bg-amber-50 text-amber-600 rounded-xl font-bold hover:bg-amber-100 transition-colors">
-              <span>Pause</span>
-            </button>
-            <button onClick={undoLastTransaction} className="flex items-center space-x-2 px-5 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 transition-colors shadow-sm">
-              <RotateCcw className="w-5 h-5" />
-              <span>Undo</span>
-            </button>
+          <div className="flex space-x-2 mr-2 z-30">
+            <div className="relative" ref={filterWrapperRef}>
+              <button
+                onClick={handleOpenFilter}
+                className={`flex items-center space-x-2 px-4 py-3 rounded-xl font-bold transition-all shadow-sm border ${isFilterOpen || appliedFilters.method !== 'ALL' || appliedFilters.fellowship !== 'ALL' || appliedFilters.min || appliedFilters.max || appliedFilters.startDate || appliedFilters.endDate
+                  ? 'bg-indigo-600 text-white border-indigo-500 shadow-indigo-200'
+                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                  }`}
+              >
+                <Filter className="w-4 h-4" />
+                <span>Filter Transactions</span>
+              </button>
+
+              {/* Filter Popover */}
+              {isFilterOpen && (
+                <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 p-5 animate-fade-in z-50">
+                  <div className="space-y-4">
+                    {/* Header */}
+                    <div className="flex justify-between items-center mb-2">
+                      <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Filter By</h4>
+                      {(filterMethod !== 'ALL' || filterFellowship !== 'ALL' || filterMinAmount || filterMaxAmount || filterStartDate || filterEndDate) && (
+                        <button
+                          onClick={() => {
+                            setFilterMethod('ALL');
+                            setFilterFellowship('ALL');
+                            setFilterMinAmount('');
+                            setFilterMaxAmount('');
+                            setFilterStartDate('');
+                            setFilterEndDate('');
+                          }}
+                          className="text-xs font-bold text-red-500 hover:text-red-600"
+                        >
+                          Reset Form
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Fellowship */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-400 mb-1.5">Fellowship</label>
+                      <select
+                        value={filterFellowship}
+                        onChange={(e) => setFilterFellowship(e.target.value as Fellowship | 'ALL')}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      >
+                        <option value="ALL">All Fellowships</option>
+                        {Object.values(Fellowship).map(f => (
+                          <option key={f} value={f}>{f}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Method */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-400 mb-1.5">Payment Method</label>
+                      <div className="flex rounded-lg border border-slate-200 overflow-hidden">
+                        {['ALL', PaymentMethod.CASH, PaymentMethod.MOMO].map((m) => (
+                          <button
+                            key={m}
+                            onClick={() => setFilterMethod(m as PaymentMethod | 'ALL')}
+                            className={`flex-1 py-2 text-xs font-bold transition-colors ${filterMethod === m
+                              ? 'bg-indigo-600 text-white'
+                              : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
+                              }`}
+                          >
+                            {m === 'ALL' ? 'All' : m}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Date Range */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-400 mb-1.5">Date Range</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="date"
+                          value={filterStartDate}
+                          onChange={(e) => setFilterStartDate(e.target.value)}
+                          className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                        <input
+                          type="date"
+                          value={filterEndDate}
+                          onChange={(e) => setFilterEndDate(e.target.value)}
+                          className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Amount Range */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-400 mb-1.5">Amount Range (GH₵)</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          placeholder="Min"
+                          value={filterMinAmount}
+                          onChange={(e) => setFilterMinAmount(e.target.value)}
+                          className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                        <input
+                          type="number"
+                          placeholder="Max"
+                          value={filterMaxAmount}
+                          onChange={(e) => setFilterMaxAmount(e.target.value)}
+                          className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Apply Button */}
+                    <button
+                      onClick={handleApplyFilter}
+                      className="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:scale-[0.98] transition-all"
+                    >
+                      Apply Filter
+                    </button>
+
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -327,7 +555,7 @@ export const Entry: React.FC = () => {
             <table className="w-full border-separate border-spacing-y-1">
               <thead className="sticky top-0 z-10">
                 <tr className="text-left text-xs font-bold text-slate-400 uppercase tracking-wider">
-                  <th className="px-6 py-4 bg-white/80 backdrop-blur rounded-l-xl">Time</th>
+                  <th className="px-6 py-4 bg-white/80 backdrop-blur rounded-l-xl">Date</th>
                   <th className="px-6 py-4 bg-white/80 backdrop-blur">Member</th>
                   <th className="px-6 py-4 bg-white/80 backdrop-blur">Method</th>
                   <th className="px-6 py-4 text-right bg-white/80 backdrop-blur">Amount</th>
@@ -335,10 +563,10 @@ export const Entry: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {transactions.map((txn) => (
+                {currentTransactions.map((txn) => (
                   <tr key={txn.id} className="hover:bg-white/60 transition-colors group">
                     <td className="px-6 py-4 text-slate-500 font-mono text-sm font-medium rounded-l-xl border-l-4 border-transparent hover:border-indigo-400">
-                      {new Date(txn.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(txn.timestamp).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4">
                       <div className="font-bold text-slate-700">{txn.memberName}</div>
@@ -365,6 +593,52 @@ export const Entry: React.FC = () => {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 0 && (
+            <div className="p-6 border-t border-slate-100 flex justify-between items-center text-sm font-medium">
+              <span className="text-slate-400">
+                Showing <span className="font-bold text-indigo-900">{Math.min((currentPage - 1) * itemsPerPage + 1, filteredTransactions.length)}</span> to <span className="font-bold text-indigo-900">{Math.min(currentPage * itemsPerPage, filteredTransactions.length)}</span> of <span className="font-bold text-indigo-900">{filteredTransactions.length}</span> entries
+              </span>
+
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-500 font-bold hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+                >
+                  Previous
+                </button>
+
+                <div className="flex space-x-1">
+                  {getPageNumbers().map((page, idx) => (
+                    typeof page === 'number' ? (
+                      <button
+                        key={idx}
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold transition-all shadow-sm ${currentPage === page
+                          ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-300 transform scale-105'
+                          : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 text-slate-600'
+                          }`}
+                      >
+                        {page}
+                      </button>
+                    ) : (
+                      <span key={idx} className="w-10 h-10 flex items-center justify-center text-slate-400 font-bold pb-2">...</span>
+                    )
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-500 font-bold hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

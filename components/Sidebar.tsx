@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import tbcLogo from '../src/images/tbc logo crop.png';
+import tbcLogoFull from '../src/images/TBC logo full.png';
 import {
   LayoutDashboard,
   PlusCircle,
@@ -16,6 +18,7 @@ import { Role } from '../types';
 export const Sidebar: React.FC = () => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -23,53 +26,76 @@ export const Sidebar: React.FC = () => {
   };
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center space-x-3 px-6 py-4 mx-4 rounded-xl transition-all duration-200 ${isActive
+    `relative group p-3.5 rounded-xl transition-all flex items-center ${isExpanded ? 'space-x-4 px-4' : 'justify-center'} ${isActive
       ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/20'
       : 'text-gray-400 hover:bg-white/5 hover:text-white'
     }`;
 
+  // Helper for Nav Items to reduce redundancy
+  const NavItem = ({ to, icon: Icon, label }: { to: string, icon: any, label: string }) => (
+    <NavLink to={to} className={({ isActive }) => {
+      // Custom active colors per specific routes if we want to keep the multicolor theme
+      // But standardizing might be cleaner for the expanded list. 
+      // Let's keep the user's multicolor preference but adapt layout.
+      let colorClass = 'text-gray-400 hover:text-white';
+      if (isActive) {
+        if (to === '/dashboard') colorClass = 'bg-orange-100 text-orange-500';
+        else if (to === '/operations/entry') colorClass = 'bg-indigo-100 text-indigo-500';
+        else if (to === '/operations/reconcile') colorClass = 'bg-emerald-100 text-emerald-500';
+        else if (to === '/directory') colorClass = 'bg-blue-100 text-blue-500';
+        else if (to === '/analytics') colorClass = 'bg-purple-100 text-purple-500';
+        else if (to === '/admin') colorClass = 'bg-red-100 text-red-500';
+      }
+
+      return `relative group p-3.5 rounded-xl transition-all flex items-center ${isExpanded ? 'space-x-3 w-full px-4' : 'justify-center'} ${colorClass}`;
+    }}>
+      <Icon className="w-6 h-6 flex-shrink-0" />
+      {isExpanded && <span className="font-bold whitespace-nowrap overflow-hidden">{label}</span>}
+
+      {!isExpanded && (
+        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-4 px-2 py-1 bg-slate-800 text-white text-xs font-bold rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+          {label}
+        </div>
+      )}
+    </NavLink>
+  );
+
   return (
-    <div className="w-24 h-full flex flex-col items-center bg-[#1e1e2d] py-8">
-      <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mb-10 shadow-lg shadow-indigo-500/10">
-        <PieChart className="text-indigo-600 w-7 h-7" />
+    <div className={`${isExpanded ? 'w-64' : 'w-24'} h-full flex flex-col items-center bg-[#1e1e2d] py-8 transition-all duration-300 ease-in-out fixed md:relative z-50`}>
+      <div
+        onClick={() => setIsExpanded(!isExpanded)}
+        className={`${isExpanded ? 'w-48 h-16' : 'w-14 h-14'} bg-white rounded-2xl flex items-center justify-center mb-10 shadow-lg shadow-indigo-500/10 p-2 overflow-hidden cursor-pointer transition-all duration-300`}
+      >
+        <img
+          src={isExpanded ? tbcLogoFull : tbcLogo}
+          alt="TBC Logo"
+          className="w-full h-full object-contain transition-all duration-300"
+        />
       </div>
 
-      <nav className="flex-1 w-full flex flex-col items-center space-y-6">
-        <NavLink to="/dashboard" className={({ isActive }) => `p-3.5 rounded-xl transition-all ${isActive ? 'bg-orange-100 text-orange-500' : 'text-gray-400 hover:text-white'}`}>
-          <LayoutDashboard className="w-6 h-6" />
-        </NavLink>
-
-        <NavLink to="/operations/entry" className={({ isActive }) => `p-3.5 rounded-xl transition-all ${isActive ? 'bg-indigo-100 text-indigo-500' : 'text-gray-400 hover:text-white'}`}>
-          <PlusCircle className="w-6 h-6" />
-        </NavLink>
+      <nav className="flex-1 w-full flex flex-col items-center space-y-4 px-4">
+        <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
+        <NavItem to="/operations/entry" icon={PlusCircle} label="New Entry" />
 
         {user?.role === Role.SUPERVISOR && (
-          <NavLink to="/operations/reconcile" className={({ isActive }) => `p-3.5 rounded-xl transition-all ${isActive ? 'bg-emerald-100 text-emerald-500' : 'text-gray-400 hover:text-white'}`}>
-            <Wallet className="w-6 h-6" />
-          </NavLink>
+          <NavItem to="/operations/reconcile" icon={Wallet} label="Reconcile" />
         )}
 
-        <NavLink to="/directory" className={({ isActive }) => `p-3.5 rounded-xl transition-all ${isActive ? 'bg-blue-100 text-blue-500' : 'text-gray-400 hover:text-white'}`}>
-          <Users className="w-6 h-6" />
-        </NavLink>
-
-        <NavLink to="/analytics" className={({ isActive }) => `p-3.5 rounded-xl transition-all ${isActive ? 'bg-purple-100 text-purple-500' : 'text-gray-400 hover:text-white'}`}>
-          <PieChart className="w-6 h-6" />
-        </NavLink>
+        <NavItem to="/directory" icon={Users} label="Member Directory" />
+        <NavItem to="/analytics" icon={PieChart} label="Analytics" />
 
         {user?.role === Role.SUPERVISOR && (
-          <NavLink to="/admin" className={({ isActive }) => `p-3.5 rounded-xl transition-all ${isActive ? 'bg-red-100 text-red-500' : 'text-gray-400 hover:text-white'}`}>
-            <ShieldCheck className="w-6 h-6" />
-          </NavLink>
+          <NavItem to="/admin" icon={ShieldCheck} label="Admin & Import" />
         )}
       </nav>
 
-      <div className="mb-4">
+      <div className="mb-4 w-full px-4">
         <button
           onClick={handleLogout}
-          className="p-3 text-gray-500 hover:text-white transition-colors"
+          className={`w-full p-3 text-gray-500 hover:text-white transition-colors flex items-center ${isExpanded ? 'space-x-3 px-4 hover:bg-white/5 rounded-xl' : 'justify-center'}`}
         >
-          <LogOut className="w-6 h-6" />
+          <LogOut className="w-6 h-6 flex-shrink-0" />
+          {isExpanded && <span className="font-bold">Logout</span>}
         </button>
       </div>
     </div>

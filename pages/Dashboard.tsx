@@ -21,15 +21,16 @@ import {
   Bar,
   Cell
 } from 'recharts';
+import { getFellowshipColorHex } from '../lib/fellowshipColors';
 
 export const Dashboard: React.FC = () => {
   const { transactions, members } = useDataStore();
 
-  type WeekOption = 'All' | '1' | '2' | '3' | '4';
+  const YEARS = ['2024', '2025', '2026'];
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-  const [velocityFilter, setVelocityFilter] = React.useState<{ month: string; week: WeekOption }>({ month: 'Jan', week: 'All' });
-  const [fellowshipFilter, setFellowshipFilter] = React.useState<{ month: string; week: WeekOption }>({ month: 'Jan', week: 'All' });
+  const [velocityFilter, setVelocityFilter] = React.useState<{ month: string; year: string }>({ month: 'Jan', year: '2025' });
+  const [fellowshipFilter, setFellowshipFilter] = React.useState<{ month: string; year: string }>({ month: 'Jan', year: '2025' });
 
   const totalAmount = transactions.reduce((acc, t) => acc + t.amount, 0);
   const activeGivers = new Set(transactions.map(t => t.memberId)).size;
@@ -40,53 +41,63 @@ export const Dashboard: React.FC = () => {
 
   // --- Dynamic Data Generators ---
 
-  // Returns data for Mon-Sun (Daily)
-  const getDailyData = () => [
-    { name: 'Mon', amount: 1200 },
-    { name: 'Tue', amount: 3400 },
-    { name: 'Wed', amount: 8200 },
-    { name: 'Thu', amount: 5600 },
-    { name: 'Fri', amount: 4100 },
-    { name: 'Sat', amount: 7300 },
-    { name: 'Sun', amount: 9500 },
-  ];
+  // --- Dynamic Data Generators (Real Data) ---
 
-  // Returns data for Week 1-4 (Weekly)
-  const getWeeklyData = () => [
-    { name: 'Week 1', amount: 15400 },
-    { name: 'Week 2', amount: 23500 },
-    { name: 'Week 3', amount: 18200 },
-    { name: 'Week 4', amount: 28900 },
-  ];
+  const getChartData = () => {
+    const monthIndex = MONTHS.indexOf(velocityFilter.month);
+    const year = parseInt(velocityFilter.year);
 
-  const getChartData = (filter: { month: string; week: WeekOption }) => {
-    return filter.week === 'All' ? getWeeklyData() : getDailyData();
+    const filtered = transactions.filter(t => {
+      const d = new Date(t.timestamp);
+      return d.getMonth() === monthIndex && d.getFullYear() === year;
+    });
+
+    // Group by Week (Simple bucketing: Day 1-7 = W1, 8-14 = W2, etc.)
+    const weeks = [0, 0, 0, 0, 0]; // Max 5 weeks
+    filtered.forEach(t => {
+      const day = new Date(t.timestamp).getDate();
+      const weekIdx = Math.min(Math.floor((day - 1) / 7), 4);
+      weeks[weekIdx] += t.amount;
+    });
+
+    return weeks.map((amount, i) => ({
+      name: `Week ${i + 1}`,
+      amount
+    })).filter(w => w.amount > 0 || w.name !== 'Week 5'); // Hide Week 5 if empty
   };
 
-  const getFellowshipData = (filter: { month: string; week: WeekOption }) => {
-    // Simulate different distributions based on week drill-down
-    if (filter.week !== 'All') {
-      return [
-        { name: 'Thyatira', value: 4500, color: '#4f46e5' },
-        { name: 'Philippi', value: 3200, color: '#0ea5e9' },
-        { name: 'Ephesus', value: 2800, color: '#10b981' },
-        { name: 'Smyrna', value: 1500, color: '#f59e0b' },
-      ];
-    }
-    return [
-      { name: 'Laodicea', value: 12500, color: '#4f46e5' },
-      { name: 'Balance', value: 9200, color: '#0ea5e9' },
-      { name: 'Thyatira', value: 8800, color: '#10b981' },
-      { name: 'Berea', value: 6500, color: '#f59e0b' },
-    ];
+  const getFellowshipData = () => {
+    const monthIndex = MONTHS.indexOf(fellowshipFilter.month);
+    const year = parseInt(fellowshipFilter.year);
+
+    const filtered = transactions.filter(t => {
+      const d = new Date(t.timestamp);
+      return d.getMonth() === monthIndex && d.getFullYear() === year;
+    });
+
+    // Group by Fellowship
+    const totals: Record<string, number> = {};
+    filtered.forEach(t => {
+      const f = t.fellowship || 'Unknown';
+      totals[f] = (totals[f] || 0) + t.amount;
+    });
+
+    return Object.entries(totals)
+      .map(([name, value]) => ({
+        name,
+        value,
+        color: getFellowshipColorHex(name)
+      }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5); // Return top 5
   };
 
   const TimeFilter = ({
     value,
     onChange
   }: {
-    value: { month: string; week: WeekOption },
-    onChange: (val: { month: string; week: WeekOption }) => void
+    value: { month: string; year: string },
+    onChange: (val: { month: string; year: string }) => void
   }) => (
     <div className="bg-white p-1 rounded-xl shadow-sm border border-slate-100 flex items-center space-x-2">
       <select
@@ -98,15 +109,11 @@ export const Dashboard: React.FC = () => {
       </select>
       <div className="w-[1px] h-4 bg-slate-200"></div>
       <select
-        value={value.week}
-        onChange={(e) => onChange({ ...value, week: e.target.value as WeekOption })}
+        value={value.year}
+        onChange={(e) => onChange({ ...value, year: e.target.value })}
         className="bg-transparent text-xs font-bold text-slate-600 focus:outline-none cursor-pointer pr-2"
       >
-        <option value="All">All Weeks</option>
-        <option value="1">Week 1</option>
-        <option value="2">Week 2</option>
-        <option value="3">Week 3</option>
-        <option value="4">Week 4</option>
+        {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
       </select>
     </div>
   );
@@ -156,28 +163,29 @@ export const Dashboard: React.FC = () => {
               <table className="w-full">
                 <thead>
                   <tr className="text-left text-xs font-semibold text-gray-400 border-b border-gray-100">
-                    <th className="px-6 py-4">ID</th>
-                    <th className="px-6 py-4">Date</th>
-                    <th className="px-6 py-4">Method</th>
-                    <th className="px-6 py-4">Member</th>
-                    <th className="px-6 py-4 text-right">Amount</th>
+                    <th className="px-3 py-3">ID</th>
+                    <th className="px-3 py-3">Date</th>
+                    <th className="px-3 py-3">Fellowship</th>
+                    <th className="px-3 py-3">Method</th>
+                    <th className="px-3 py-3">Member</th>
+                    <th className="px-3 py-3 text-right">Amount</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {[1, 2, 3].map((_, i) => (
-                    <tr key={i} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 rounded-xl bg-gray-100 overflow-hidden flex items-center justify-center text-gray-400">
-                            <Hash className="w-4 h-4" />
-                          </div>
-                          <span className="font-bold text-gray-700"># {2045 - i}</span>
-                        </div>
+                  {transactions.slice(0, 5).map((txn, i) => (
+                    <tr key={txn.id} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="px-3 py-3">
+                        <span className="font-bold text-gray-700 text-xs">{txn.id.slice(-6)}</span>
                       </td>
-                      <td className="px-6 py-4 text-sm font-semibold text-gray-600">Today, 10:3{i} AM</td>
-                      <td className="px-6 py-4 text-sm font-semibold text-gray-600">Cash</td>
-                      <td className="px-6 py-4 text-sm font-bold text-gray-700">Member {i + 1}</td>
-                      <td className="px-6 py-4 text-right text-emerald-500 font-bold">GH₵ {(500 - i * 50).toLocaleString()}</td>
+                      <td className="px-3 py-3 text-xs font-semibold text-gray-600 whitespace-nowrap">
+                        {new Date(txn.timestamp).toLocaleDateString()}
+                      </td>
+                      <td className="px-3 py-3 text-xs font-bold" style={{ color: getFellowshipColorHex(txn.fellowship) }}>
+                        {txn.fellowship}
+                      </td>
+                      <td className="px-3 py-3 text-xs font-semibold text-gray-600">{txn.method}</td>
+                      <td className="px-3 py-3 text-xs font-bold text-gray-700 max-w-[160px] truncate" title={txn.memberName}>{txn.memberName}</td>
+                      <td className="px-3 py-3 text-right text-emerald-500 font-bold whitespace-nowrap">GH₵{txn.amount.toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -202,7 +210,7 @@ export const Dashboard: React.FC = () => {
 
             <div className="h-full w-full pt-4">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={getChartData(velocityFilter)}>
+                <AreaChart data={getChartData()}>
                   <defs>
                     <linearGradient id="splitColor" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#FB923C" stopOpacity={0.4} />
@@ -234,11 +242,11 @@ export const Dashboard: React.FC = () => {
 
           <div className="glass-panel p-8">
             <div className="space-y-6">
-              {getFellowshipData(fellowshipFilter).map((item, i) => (
+              {getFellowshipData().map((item, i) => (
                 <div key={i} className="flex items-center justify-between">
                   <span className="w-32 font-bold text-gray-600 text-sm truncate">{item.name}</span>
                   <div className="flex-1 h-2 bg-gray-100 rounded-full mx-4 overflow-hidden">
-                    <div className="h-full rounded-full" style={{ width: `${(item.value / (fellowshipFilter.week === 'All' ? 12500 : 4500)) * 100}%`, backgroundColor: item.color }}></div>
+                    <div className="h-full rounded-full" style={{ width: `${(item.value / 12500) * 100}%`, backgroundColor: item.color }}></div>
                   </div>
                   <span className="w-16 text-right font-bold text-gray-800 text-sm">₵{item.value.toLocaleString()}</span>
                 </div>

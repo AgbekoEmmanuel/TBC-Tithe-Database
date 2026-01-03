@@ -42,7 +42,6 @@ export interface Member {
   phone: string;
   fellowship: Fellowship;
   status: 'ACTIVE' | 'PROVISIONAL';
-  lastGiftDate?: string;
   ytdTotal: number;
 }
 
