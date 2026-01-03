@@ -1,0 +1,78 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+/* Global Styles */
+body {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  background-color: #1e1e2d;
+  /* Dark background matching the image */
+  color: #1e1e2d;
+  overflow: hidden;
+  /* Prevent body scroll, handle in containers */
+}
+
+/* Floating Container Utility */
+.main-content-wrapper {
+  height: 100vh;
+  box-sizing: border-box;
+}
+
+.floating-container {
+  background-color: #F3F5F9;
+  /* Light gray/white for the card */
+  border-radius: 40px;
+  height: 100%;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.3);
+}
+
+/* Glass/Card Utilities */
+.glass-panel {
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.dark-card {
+  background: #1e1e2d;
+  color: white;
+  border-radius: 24px;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
