@@ -29,10 +29,12 @@ const RequireAuth: React.FC<{ children: React.ReactNode, allowedRoles?: Role[] }
 
 const App: React.FC = () => {
   const { fetchData } = useDataStore();
+  const { checkAuth } = useAuthStore();
 
   React.useEffect(() => {
+    checkAuth();
     fetchData();
-  }, [fetchData]);
+  }, [fetchData, checkAuth]);
 
   return (
     <Routes>
@@ -72,7 +74,7 @@ const App: React.FC = () => {
         } />
 
         <Route path="admin" element={
-          <RequireAuth allowedRoles={[Role.SUPERVISOR]}>
+          <RequireAuth>
             <Admin />
           </RequireAuth>
         } />

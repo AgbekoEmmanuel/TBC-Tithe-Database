@@ -3,29 +3,108 @@ import { User, Role, Member, Transaction, Batch, Fellowship, PaymentMethod } fro
 import { supabase } from './lib/supabaseClient';
 
 // --- Auth Store ---
+// --- Auth Store ---
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
-  login: (email: string) => void;
-  logout: () => void;
+  isLoading: boolean;
+  error: string | null;
+  login: (email: string, password?: string) => Promise<void>;
+  logout: () => Promise<void>;
+  checkAuth: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isAuthenticated: false,
-  login: (email: string) => {
-    const role = email.includes('supervisor') ? Role.SUPERVISOR : Role.OFFICER;
-    set({
-      isAuthenticated: true,
-      user: {
-        id: 'USR-123',
-        name: email.split('@')[0],
+  isLoading: false,
+  error: null,
+
+  login: async (email: string, password?: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      if (!password) throw new Error("Password is required");
+
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
-        role
-      }
-    });
+        password,
+      });
+
+      if (authError) throw authError;
+      if (!authData.user) throw new Error("No user returned");
+
+      // Fetch Profile
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', authData.user.id)
+        .single();
+
+      // If no profile exists yet (first login?), create one or default to OFFICER
+      // For now, we assume profile should exist or we use default.
+      // If admin@tbc.com doesn't have a profile, we might be stuck.
+      // Let's degrade gracefully.
+
+      const role = profileData?.role as Role || (email.includes('admin') ? Role.SUPERVISOR : Role.OFFICER);
+
+      // Hardcode name for Admin as requested
+      const displayName = (authData.user.email === 'admin@tbc.com') ? 'Phebe' : (authData.user.user_metadata?.name || profileData?.email?.split('@')[0] || email.split('@')[0]);
+
+      const user: User = {
+        id: authData.user.id,
+        email: authData.user.email || email,
+        name: displayName,
+        role,
+        avatarUrl: profileData?.avatar_url
+      };
+
+      set({ isAuthenticated: true, user, isLoading: false });
+    } catch (err: any) {
+      console.error('Login error:', err);
+      // Detailed error message
+      set({ error: err.message || 'Failed to login', isLoading: false });
+    }
   },
-  logout: () => set({ user: null, isAuthenticated: false })
+
+  logout: async () => {
+    await supabase.auth.signOut();
+    set({ user: null, isAuthenticated: false });
+  },
+
+  checkAuth: async () => {
+    set({ isLoading: true });
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        set({ isAuthenticated: false, user: null, isLoading: false });
+        return;
+      }
+
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+
+      const role = profileData?.role as Role || (session.user.email?.includes('admin') ? Role.SUPERVISOR : Role.OFFICER);
+
+      // Hardcode name for Admin as requested
+      const displayName = (session.user.email === 'admin@tbc.com') ? 'Phebe' : (session.user.user_metadata?.name || profileData?.email?.split('@')[0] || session.user.email?.split('@')[0] || 'User');
+
+      const user: User = {
+        id: session.user.id,
+        email: session.user.email!,
+        name: displayName,
+        role,
+        avatarUrl: profileData?.avatar_url
+      };
+
+      set({ isAuthenticated: true, user, isLoading: false });
+    } catch (err) {
+      console.error('Check auth error:', err);
+      set({ isAuthenticated: false, user: null, isLoading: false });
+    }
+  }
 }));
 
 // --- Data Store ---
@@ -38,10 +117,12 @@ interface DataState {
   error: string | null;
   fetchData: () => Promise<void>;
   addTransaction: (txn: Transaction) => Promise<void>;
+  deleteTransaction: (id: string) => Promise<void>;
   undoLastTransaction: () => void;
   updateBatchStatus: (status: Batch['status']) => Promise<void>;
   addMember: (member: Omit<Member, 'id' | 'ytdTotal' | 'status'>) => Promise<Member | null>;
   updateMember: (id: string, updates: Partial<Member>) => Promise<void>;
+  deleteMember: (id: string) => Promise<void>;
   importData: (members: Member[], transactions: Transaction[]) => Promise<{ success: boolean; error?: string }>;
 }
 
@@ -187,6 +268,46 @@ export const useDataStore = create<DataState>((set, get) => ({
     }
   },
 
+  deleteTransaction: async (id: string) => {
+    const state = get();
+    const txnToDelete = state.transactions.find(t => t.id === id);
+    if (!txnToDelete) return;
+
+    // Optimistic Update
+    set((s) => ({
+      transactions: s.transactions.filter(t => t.id !== id),
+      members: s.members.map(m =>
+        m.id === txnToDelete.memberId
+          ? { ...m, ytdTotal: Math.max(0, (m.ytdTotal || 0) - txnToDelete.amount) }
+          : m
+      )
+    }));
+
+    // DB Delete
+    const { error } = await supabase.from('transactions').delete().eq('id', id);
+    if (error) {
+      console.error('Error deleting transaction:', error);
+      // Revert logic (fetch data to resync)
+      await get().fetchData();
+    } else {
+      // Sync member total in DB
+      const member = state.members.find(m => m.id === txnToDelete.memberId);
+      if (member) {
+        // We calculate the new total based on current optimistic state (which is accurate enough locally)
+        // Or better, fetch the member YTD from DB or recalc sum.
+        // For simplicity, we just debit the member ytd_total in DB same as local.
+        // Note: Ideally we should use an RPC or re-sum, but decrementing fits the pattern.
+        // Actually, let's just update the member with the new value we calculated locally.
+        const currentMember = get().members.find(m => m.id === member.id);
+        if (currentMember) {
+          await supabase.from('members').update({
+            ytd_total: currentMember.ytdTotal
+          }).eq('id', member.id);
+        }
+      }
+    }
+  },
+
   updateBatchStatus: async (status) => {
     const batchId = get().activeBatchId;
     set((state) => ({
@@ -287,27 +408,131 @@ export const useDataStore = create<DataState>((set, get) => ({
     }
   },
 
+  deleteMember: async (id: string) => {
+    // 1. Optimistic Update
+    const memberToDelete = get().members.find(m => m.id === id);
+    if (!memberToDelete) return;
+
+    set((state) => ({
+      members: state.members.filter(m => m.id !== id),
+      // Filter out transactions for this member to keep UI sync
+      transactions: state.transactions.filter(t => t.memberId !== id)
+    }));
+
+    // 2. DB Delete
+    try {
+      // Delete transactions first (Foreign Key Constraint usually requires this, 
+      // though CASCADE might be set, it's safer to be explicit)
+      const { error: txnError } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('member_id', id);
+
+      if (txnError) throw txnError;
+
+      // Delete Member
+      const { error: memberError } = await supabase
+        .from('members')
+        .delete()
+        .eq('id', id);
+
+      if (memberError) throw memberError;
+
+    } catch (err: any) {
+      console.error('Error deleting member:', err);
+      // Revert logic (simplified: fetch data again)
+      await get().fetchData();
+    }
+  },
+
   importData: async (members, transactions) => {
     try {
       set({ isLoading: true });
 
-      // 1. Upsert Members
-      const dbMembers = members.map(m => ({
+      // 1. Resolve Member IDs & clean up duplicates
+      // Fetch fresh members to ensure we catch all duplicates
+      const { data: serverMembers } = await supabase.from('members').select('*');
+      const currentMembers = serverMembers || get().members;
+
+      const nameToMembersMap = new Map<string, any[]>();
+      currentMembers.forEach(m => {
+        if (m.name) {
+          const norm = m.name.trim().toUpperCase();
+          if (!nameToMembersMap.has(norm)) nameToMembersMap.set(norm, []);
+          nameToMembersMap.get(norm)!.push(m);
+        }
+      });
+
+      const resolvedMembers = [];
+      const duplicateRemovalPromises: Promise<any>[] = [];
+
+      for (const m of members) {
+        const normalizedName = m.name?.trim().toUpperCase();
+        let finalId = m.id;
+
+        if (normalizedName && nameToMembersMap.has(normalizedName)) {
+          const matches = nameToMembersMap.get(normalizedName)!;
+          if (matches.length > 0) {
+            // Survivor is the FIRST match (usually the oldest or arbitrary stable one)
+            const survivor = matches[0];
+            finalId = survivor.id;
+
+            // If there are duplicates (Victims), merge and delete them
+            if (matches.length > 1) {
+              const victimIds = matches.slice(1).map(v => v.id);
+
+              const cleanup = async () => {
+                // 1. Reassign transactions from victims to survivor
+                await supabase
+                  .from('transactions')
+                  .update({ member_id: survivor.id })
+                  .in('member_id', victimIds);
+
+                // 2. Delete victims
+                await supabase
+                  .from('members')
+                  .delete()
+                  .in('id', victimIds);
+              };
+              duplicateRemovalPromises.push(cleanup());
+            }
+          }
+        }
+        resolvedMembers.push({ ...m, id: finalId });
+      }
+
+      // Wait for cleanups to finish
+      if (duplicateRemovalPromises.length > 0) {
+        await Promise.all(duplicateRemovalPromises);
+      }
+
+      // Update transactions with resolved IDs
+      const resolvedTransactions = transactions.map(t => {
+        const originalMember = members.find(m => m.id === t.memberId);
+        if (originalMember) {
+          const match = resolvedMembers.find(rm => rm.name === originalMember.name);
+          if (match) return { ...t, memberId: match.id };
+        }
+        return t;
+      });
+
+      // 1.5 Upsert Members
+      const dbMembers = resolvedMembers.map(m => ({
         id: m.id,
         name: m.name,
         phone: m.phone,
         fellowship: m.fellowship,
         status: m.status,
-        ytd_total: m.ytdTotal
+        ytd_total: m.ytdTotal !== undefined ? m.ytdTotal : 0 // Force update from import
       }));
 
       const { error: memError } = await supabase.from('members').upsert(dbMembers);
       if (memError) throw memError;
 
-      // 1.5 Upsert Batches (Fix for FK constraint)
-      const uniqueBatchIds = Array.from(new Set(transactions.map(t => t.batchId)));
+      // 1.6 Upsert Batches (Fix for FK constraint)
+      const uniqueBatchIds = Array.from(new Set(resolvedTransactions.map(t => t.batchId)));
       const dbBatches = uniqueBatchIds.map(bid => {
-        const sampleTxn = transactions.find(t => t.batchId === bid);
+        const sampleTxn = resolvedTransactions.find(t => t.batchId === bid);
         return {
           id: bid,
           date: sampleTxn ? sampleTxn.timestamp : new Date().toISOString(),
@@ -322,10 +547,18 @@ export const useDataStore = create<DataState>((set, get) => ({
       if (dbBatches.length > 0) {
         const { error: batchError } = await supabase.from('batches').upsert(dbBatches);
         if (batchError) throw batchError;
+
+        // 1.8 Delete existing transactions for these batches to prevent duplication (Overwrite logic)
+        const { error: deleteError } = await supabase
+          .from('transactions')
+          .delete()
+          .in('batch_id', uniqueBatchIds);
+
+        if (deleteError) throw deleteError;
       }
 
       // 2. Insert Transactions (Chunked)
-      const dbTransactions = transactions.map(t => ({
+      const dbTransactions = resolvedTransactions.map(t => ({
         id: t.id,
         batch_id: t.batchId,
         member_id: t.memberId,

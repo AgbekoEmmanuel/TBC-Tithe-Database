@@ -16,6 +16,7 @@ import { useAuthStore } from '../store';
 import { Role } from '../types';
 
 export const Sidebar: React.FC = () => {
+  // Force rebuild
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -47,7 +48,7 @@ export const Sidebar: React.FC = () => {
         else if (to === '/admin') colorClass = 'bg-red-100 text-red-500';
       }
 
-      return `relative group p-3.5 rounded-xl transition-all flex items-center ${isExpanded ? 'space-x-3 w-full px-4' : 'justify-center'} ${colorClass}`;
+      return `relative group ${isExpanded ? 'p-3.5' : 'p-2'} rounded-xl transition-all flex items-center ${isExpanded ? 'space-x-3 w-full px-4' : 'justify-center'} ${colorClass}`;
     }}>
       <Icon className="w-6 h-6 flex-shrink-0" />
       {isExpanded && <span className="font-bold whitespace-nowrap overflow-hidden">{label}</span>}
@@ -61,10 +62,10 @@ export const Sidebar: React.FC = () => {
   );
 
   return (
-    <div className={`${isExpanded ? 'w-64' : 'w-24'} h-full flex flex-col items-center bg-[#1e1e2d] py-8 transition-all duration-300 ease-in-out fixed md:relative z-50`}>
+    <div className={`${isExpanded ? 'w-64' : 'w-14'} h-full flex flex-col items-center bg-[#1e1e2d] py-8 transition-all duration-300 ease-in-out fixed md:relative z-50`}>
       <div
         onClick={() => setIsExpanded(!isExpanded)}
-        className={`${isExpanded ? 'w-48 h-16' : 'w-14 h-14'} bg-white rounded-2xl flex items-center justify-center mb-10 shadow-lg shadow-indigo-500/10 p-2 overflow-hidden cursor-pointer transition-all duration-300`}
+        className={`${isExpanded ? 'w-48 h-16' : 'w-10 h-10'} bg-white rounded-2xl flex items-center justify-center mb-10 shadow-lg shadow-indigo-500/10 p-2 overflow-hidden cursor-pointer transition-all duration-300`}
       >
         <img
           src={isExpanded ? tbcLogoFull : tbcLogo}
@@ -73,7 +74,7 @@ export const Sidebar: React.FC = () => {
         />
       </div>
 
-      <nav className="flex-1 w-full flex flex-col items-center space-y-4 px-4">
+      <nav className={`flex-1 w-full flex flex-col items-center space-y-4 ${isExpanded ? 'px-4' : 'px-2'}`}>
         <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
         <NavItem to="/operations/entry" icon={PlusCircle} label="New Entry" />
 
@@ -83,10 +84,7 @@ export const Sidebar: React.FC = () => {
 
         <NavItem to="/directory" icon={Users} label="Member Directory" />
         <NavItem to="/analytics" icon={PieChart} label="Analytics" />
-
-        {user?.role === Role.SUPERVISOR && (
-          <NavItem to="/admin" icon={ShieldCheck} label="Admin & Import" />
-        )}
+        <NavItem to="/admin" icon={ShieldCheck} label="Admin & Import" />
       </nav>
 
       <div className="mb-4 w-full px-4">

@@ -32,47 +32,65 @@ export const parseExcelData = async (file: File, year: string) => {
         );
 
         if (!fellowshipName) {
-            // warnings.push(`Skipping sheet "${sheetName}": Could not match to a Fellowship.`);
+            warnings.push(`Skipping sheet "${sheetName}": Could not match to a Fellowship.`);
             return;
         }
 
         const sheet = workbook.Sheets[sheetName];
         const rows = utils.sheet_to_json(sheet, { header: 1 }) as any[][];
 
-        // 2. Find Header Row (Look for "MEMBER NAME" and "CONTACT")
+        // 2. Find Header Row (Strict Mode)
+        // We look for a row that has "NAME" AND ("YEAR TO DATE" OR "YTD" OR "WEEK")
+        // This avoids false positives like "CONTACT PASTOR" in title rows.
         let headerRowIndex = -1;
         for (let i = 0; i < rows.length; i++) {
-            const rowStr = rows[i].map(c => sanitize(c)).join(' ');
-            if (rowStr.includes('MEMBER NAME') && rowStr.includes('CONTACT')) {
+            const rowStr = rows[i].map(c => sanitize(c)).join('__'); // Use delimiter to avoid partial word matches across cells
+
+            const hasName = rowStr.includes('MEMBER NAME') || rowStr.includes('NAME');
+            const hasYtd = rowStr.includes('YEAR TO DATE') || rowStr.includes('YTD') || rowStr.includes('TOTAL');
+            const hasWeek = rowStr.includes('WEEK 1') || rowStr.includes('WEEK1');
+
+            if (hasName && (hasYtd || hasWeek)) {
                 headerRowIndex = i;
                 break;
             }
         }
 
         if (headerRowIndex === -1) {
-            // Fallback for older format
+            // Fallback: Try just NAME and CONTACT if strict mode failed (e.g. file has no YTD/Weeks?)
             for (let i = 0; i < rows.length; i++) {
-                const rowStr = rows[i].map(c => sanitize(c)).join(' ');
-                if (rowStr.includes('MEMBER NAME') && rowStr.includes('MEMBER ID')) {
+                const rowStr = rows[i].map(c => sanitize(c)).join('__');
+                if ((rowStr.includes('MEMBER NAME') || rowStr.includes('NAME')) && rowStr.includes('CONTACT')) {
                     headerRowIndex = i;
                     break;
                 }
             }
+
             if (headerRowIndex === -1) {
-                warnings.push(`Skipping sheet "${sheetName}": Could not find 'MEMBER NAME' and 'CONTACT' header row.`);
+                warnings.push(`Skipping sheet "${sheetName}": Indeterminable header row. Expected 'NAME' with 'YTD', 'TOTAL', or 'WEEK'.`);
                 return;
             }
+        } const headerRow = rows[headerRowIndex];
+
+        // Find YTD Column (Look for "YEAR TO DATE TOTAL", "YTD", or fallback to last column)
+        let ytdIdx = headerRow.findIndex((c: any) => {
+            const s = sanitize(c);
+            return s.includes('YEAR TO DATE TOTAL') || s === 'YTD' || s.includes('YTD TOTAL');
+        });
+
+        // Fallback to last NON-EMPTY column if not found (User Request)
+        if (ytdIdx === -1 && headerRow.length > 0) {
+            for (let i = headerRow.length - 1; i >= 0; i--) {
+                if (sanitize(headerRow[i]).length > 0) {
+                    ytdIdx = i;
+                    break;
+                }
+            }
         }
-
-        const headerRow = rows[headerRowIndex];
-
-        // Find YTD Column (Look for "YEAR TO DATE TOTAL")
-        const ytdIdx = headerRow.findIndex((c: any) => sanitize(c).includes('YEAR TO DATE TOTAL'));
 
         // 3. Map Columns to Months/Weeks
         const monthRow = rows[headerRowIndex - 1]; // Assumption: Month is usually above the header
 
-        // ... (existing month logic stays same)
         // Create a map of ColIndex -> { Month, Week }
         const colMap: Record<number, { month: string, week: number }> = {};
         let currentMonth = '';
@@ -97,9 +115,17 @@ export const parseExcelData = async (file: File, year: string) => {
         }
 
         // 4. Extract Data
-        const nameIdx = headerRow.findIndex((c: any) => sanitize(c).includes('MEMBER NAME'));
+        const nameIdx = headerRow.findIndex((c: any) => {
+            const s = sanitize(c);
+            return s === 'MEMBER NAME' || s === 'NAME';
+        });
         const contactIdx = headerRow.findIndex((c: any) => sanitize(c).includes('CONTACT'));
         const idIdx = headerRow.findIndex((c: any) => sanitize(c).includes('MEMBER ID')); // Legacy support
+
+        if (nameIdx === -1) {
+            warnings.push(`Skipping sheet "${sheetName}": Found header row but could not find 'MEMBER NAME' or 'NAME' column.`);
+            return;
+        }
 
         for (let r = headerRowIndex + 1; r < rows.length; r++) {
             const row = rows[r];
@@ -122,10 +148,29 @@ export const parseExcelData = async (file: File, year: string) => {
                 // We'll prioritize CONTACT column.
             }
 
-            // Get YTD if available
+            // Get YTD if available (Parse string or number)
             let extractedYtd = 0;
-            if (ytdIdx !== -1 && typeof row[ytdIdx] === 'number') {
-                extractedYtd = row[ytdIdx];
+
+            // 1. Try Specific Column
+            let rawVal = (ytdIdx !== -1) ? row[ytdIdx] : undefined;
+
+            // 2. Force Fix: If specific column is empty, try the VERY LAST column in the row
+            // (Assumes YTD Total is always the last entry in the Excel row)
+            if (rawVal === undefined || rawVal === null || rawVal === '') {
+                if (row.length > 0) {
+                    rawVal = row[row.length - 1];
+                }
+            }
+
+            if (rawVal !== undefined && rawVal !== null) {
+                if (typeof rawVal === 'number') {
+                    extractedYtd = rawVal;
+                } else {
+                    // Clean string: remove non-numeric chars except dot and minus (handle currency, commas)
+                    const cleanVal = String(rawVal).replace(/[^0-9.-]+/g, '');
+                    const parsed = parseFloat(cleanVal);
+                    if (!isNaN(parsed)) extractedYtd = parsed;
+                }
             }
 
             // Create Member

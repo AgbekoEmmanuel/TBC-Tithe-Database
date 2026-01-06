@@ -6,20 +6,21 @@ import { useAuthStore } from '../store';
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const login = useAuthStore(state => state.login);
+  const isLoading = useAuthStore(state => state.isLoading);
+  const error = useAuthStore(state => state.error);
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    // Simulate API delay
-    setTimeout(() => {
-      login(email);
+  React.useEffect(() => {
+    if (isAuthenticated) {
       navigate('/dashboard');
-      setIsLoading(false);
-    }, 800);
+    }
+  }, [isAuthenticated, navigate]);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await login(email, password);
   };
 
   return (
@@ -35,29 +36,34 @@ export const Login: React.FC = () => {
           </p>
         </div>
 
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium border border-red-100 flex items-center justify-center">
+            {error}
+          </div>
+        )}
+
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">Email Address</label>
             <div className="relative">
               <Mail className="absolute left-4 top-3.5 text-slate-400 w-5 h-5" />
-              <input 
-                type="email" 
+              <input
+                type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="officer@church.com"
+                placeholder="admin@tbc.com"
                 className="w-full bg-slate-50 border-transparent focus:border-indigo-500 focus:bg-white focus:ring-0 rounded-2xl py-3 pl-12 pr-4 text-slate-800 transition-all font-medium"
                 required
               />
             </div>
-            <p className="text-xs text-slate-400 mt-2 ml-1">Try: officer@church.com or supervisor@church.com</p>
           </div>
 
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">Password</label>
             <div className="relative">
               <Lock className="absolute left-4 top-3.5 text-slate-400 w-5 h-5" />
-              <input 
-                type="password" 
+              <input
+                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
@@ -67,8 +73,8 @@ export const Login: React.FC = () => {
             </div>
           </div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={isLoading}
             className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center space-x-2 shadow-lg shadow-indigo-200 disabled:opacity-70"
           >
@@ -81,22 +87,11 @@ export const Login: React.FC = () => {
               </>
             )}
           </button>
-          
-          <button 
-            type="button"
-            onClick={() => {
-              login('supervisor@church.com');
-              navigate('/dashboard');
-            }}
-            className="w-full mt-4 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold py-3 rounded-2xl transition-all flex items-center justify-center text-sm"
-          >
-            Developer Bypass (Supervisor)
-          </button>
         </form>
 
         <div className="mt-8 text-center">
           <p className="text-xs text-slate-400">
-            Protected by Churchify Secure Identity. <br/>
+            Protected by Churchify Secure Identity. <br />
             Unauthorized access is prohibited.
           </p>
         </div>

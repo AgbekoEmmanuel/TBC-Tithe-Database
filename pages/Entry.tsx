@@ -2,11 +2,19 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useDataStore, useAuthStore } from '../store';
 import { Member, PaymentMethod, Transaction, Fellowship, FELLOWSHIP_PASTORS } from '../types';
-import { Search, Plus, Check, RotateCcw, User as UserIcon, Calendar, Save, UserPlus, X, Trash2, Filter } from 'lucide-react';
+import { getSundayDate } from '../lib/dateUtils';
+import { Search, Plus, Check, RotateCcw, User as UserIcon, Calendar, Save, UserPlus, X, Trash2, Filter, LogOut, Play } from 'lucide-react';
+
 
 export const Entry: React.FC = () => {
-  const { members, transactions, activeBatchId, addTransaction, undoLastTransaction, addMember } = useDataStore();
+  const { members, transactions, activeBatchId, addTransaction, deleteTransaction, undoLastTransaction, addMember } = useDataStore();
   const { user } = useAuthStore();
+
+  // Session State
+  const [sessionYear, setSessionYear] = useState('2025');
+  const [sessionMonth, setSessionMonth] = useState('JANUARY');
+  const [sessionWeek, setSessionWeek] = useState(1);
+  const [isSessionActive, setIsSessionActive] = useState(false);
 
   // State
   const [searchTerm, setSearchTerm] = useState('');
@@ -20,6 +28,7 @@ export const Entry: React.FC = () => {
   const [newMemberFellowship, setNewMemberFellowship] = useState<Fellowship>(Fellowship.Thyatira);
   const [currentPage, setCurrentPage] = useState(1);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+
 
   // Pending Filter State (Form)
   const [filterMethod, setFilterMethod] = useState<PaymentMethod | 'ALL'>('ALL');
@@ -173,9 +182,11 @@ export const Entry: React.FC = () => {
       fellowship: selectedMember.fellowship,
       amount: numAmount,
       method,
-      timestamp: new Date().toISOString(),
+      timestamp: getSundayDate(parseInt(sessionYear), sessionMonth, sessionWeek), // Use Session Date
       officerId: user?.id || 'sys'
     };
+
+
 
     addTransaction(newTxn);
 
@@ -206,206 +217,303 @@ export const Entry: React.FC = () => {
     <div className="h-full flex flex-col lg:flex-row gap-6 animate-fade-in pb-20">
       {/* Left Panel - Entry Form */}
       <div className="w-full lg:w-5/12 flex flex-col h-full glass-panel p-8 relative border-gray-200">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-[#1e1e2d]">New Transaction</h2>
-          <p className="text-gray-400 text-sm">Record a new tithe or offering</p>
-        </div>
-        {/* 1. Member Search */}
-        <div className="mb-8 relative z-20">
-          <div className="flex justify-between items-end mb-3">
-            <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider">1. Select Member</label>
-            <button
-              onClick={() => {
-                setNewMemberName(''); // Clear any previous search term default
-                setIsAddMemberOpen(true);
-              }}
-              className="text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg flex items-center transition-colors"
-            >
-              <UserPlus className="w-4 h-4 mr-1.5" />
-              New Member
-            </button>
-          </div>
-          <div className="relative group">
-            <Search className="absolute left-5 top-4 text-slate-400 w-5 h-5 group-focus-within:text-indigo-500 transition-colors" />
-            <input
-              ref={searchInputRef}
-              type="text"
-              value={selectedMember ? selectedMember.name : searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setSelectedMember(null);
-              }}
-              placeholder="Type name or phone number..."
-              className={`w-full text-lg font-medium border-2 rounded-2xl py-3.5 pl-14 pr-4 transition-all shadow-sm ${selectedMember
-                ? 'bg-indigo-50/50 border-indigo-200 text-indigo-900 shadow-indigo-100'
-                : 'bg-white/50 border-slate-200 focus:border-indigo-500 focus:bg-white focus:shadow-lg focus:shadow-indigo-100'
-                }`}
-            />
-          </div>
+        {!isSessionActive ? (
+          // SESSION SETUP VIEW
+          <div className="flex flex-col h-full justify-center animate-fade-in">
+            <div className="mb-10 text-center">
+              <div className="w-20 h-20 bg-indigo-100 rounded-3xl flex items-center justify-center mx-auto mb-6 text-indigo-600 shadow-inner">
+                <Calendar className="w-10 h-10" />
+              </div>
+              <h2 className="text-3xl font-black text-slate-800 mb-2">Start New Session</h2>
+              <p className="text-slate-500 font-medium">Select the period for these transactions</p>
+            </div>
 
-          {/* Dropdown Results */}
-          {!selectedMember && searchTerm.length > 1 && (
-            <div className="absolute top-full left-0 right-0 mt-3 bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 max-h-80 overflow-y-auto z-50 p-2">
-              {filteredMembers.map(m => (
-                <button
-                  key={m.id}
-                  onClick={() => handleMemberSelect(m)}
-                  className="w-full text-left px-4 py-3 hover:bg-indigo-50 rounded-xl flex items-center justify-between group transition-colors mb-1"
+            <div className="space-y-6 max-w-sm mx-auto w-full">
+              {/* Year */}
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Fiscal Year</label>
+                <select
+                  value={sessionYear}
+                  onChange={(e) => setSessionYear(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-4 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow appearance-none cursor-pointer hover:bg-slate-100"
                 >
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center mr-3 text-slate-400 group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
-                      <UserIcon className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-slate-800 group-hover:text-indigo-700">{m.name}</p>
-                      <p className="text-xs text-slate-400 font-medium">{m.phone}</p>
-                    </div>
-                  </div>
-                  <span className="text-xs font-bold bg-slate-100 px-2.5 py-1 rounded-lg text-slate-500 group-hover:bg-white group-hover:shadow-sm">{m.fellowship}</span>
+                  <option value="2024">2024</option>
+                  <option value="2025">2025</option>
+                  <option value="2026">2026</option>
+                </select>
+              </div>
+
+              {/* Month */}
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Month</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'].map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => setSessionMonth(m)}
+                      className={`py-2 px-1 rounded-lg text-xs font-bold transition-all ${sessionMonth === m
+                        ? 'bg-indigo-600 text-white shadow-md'
+                        : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
+                        }`}
+                    >
+                      {m.slice(0, 3)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Week */}
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Week Number</label>
+                <div className="flex bg-slate-100 p-1 rounded-xl">
+                  {[1, 2, 3, 4, 5].map((w) => (
+                    <button
+                      key={w}
+                      onClick={() => setSessionWeek(w)}
+                      className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all ${sessionWeek === w
+                        ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5'
+                        : 'text-slate-400 hover:text-slate-600'
+                        }`}
+                    >
+                      {w}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsSessionActive(true)}
+                className="w-full bg-indigo-600 text-white font-bold py-5 rounded-2xl text-lg hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 flex items-center justify-center mt-8 active:scale-[0.98]"
+              >
+                <Play className="w-5 h-5 mr-3 fill-current" />
+                Start Session
+              </button>
+            </div>
+          </div>
+        ) : (
+          // TRANSACTION ENTRY VIEW
+          <div className="flex flex-col h-full animate-fade-in">
+            {/* Session Header Banner */}
+            <div className="bg-slate-900 rounded-2xl p-4 mb-6 flex justify-between items-center text-white shadow-lg shadow-slate-200">
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-indigo-300 mb-0.5">Active Session</div>
+                <div className="font-bold flex items-center">
+                  <Calendar className="w-4 h-4 mr-2 opacity-75" />
+                  {sessionMonth} {sessionYear} <span className="mx-2 opacity-50">|</span> Week {sessionWeek}
+                </div>
+              </div>
+              <button
+                onClick={() => setIsSessionActive(false)}
+                className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-colors"
+                title="End Session"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="mb-2">
+              <h2 className="text-2xl font-bold text-[#1e1e2d]">New Transaction</h2>
+              <p className="text-gray-400 text-sm">Record a new tithe or offering</p>
+            </div>
+            {/* 1. Member Search */}
+            <div className="mb-8 relative z-20">
+              <div className="flex justify-between items-end mb-3">
+                <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider">1. Select Member</label>
+                <button
+                  onClick={() => {
+                    setNewMemberName(''); // Clear any previous search term default
+                    setIsAddMemberOpen(true);
+                  }}
+                  className="text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg flex items-center transition-colors"
+                >
+                  <UserPlus className="w-4 h-4 mr-1.5" />
+                  New Member
                 </button>
-              ))}
-              {filteredMembers.length === 0 && (
-                <div className="p-4">
-                  <div className="text-center text-slate-400 text-sm font-medium mb-3">No members found matching "{searchTerm}"</div>
-                  <button
-                    onClick={openQuickAdd}
-                    className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold flex items-center justify-center transition-colors shadow-lg shadow-indigo-200"
-                  >
-                    <UserPlus className="w-5 h-5 mr-2" />
-                    Add "{searchTerm}" as New Member
-                  </button>
+              </div>
+              <div className="relative group">
+                <Search className="absolute left-5 top-4 text-slate-400 w-5 h-5 group-focus-within:text-indigo-500 transition-colors" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={selectedMember ? selectedMember.name : searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setSelectedMember(null);
+                  }}
+                  placeholder="Type name or phone number..."
+                  className={`w-full text-lg font-medium border-2 rounded-2xl py-3.5 pl-14 pr-4 transition-all shadow-sm ${selectedMember
+                    ? 'bg-indigo-50/50 border-indigo-200 text-indigo-900 shadow-indigo-100'
+                    : 'bg-white/50 border-slate-200 focus:border-indigo-500 focus:bg-white focus:shadow-lg focus:shadow-indigo-100'
+                    }`}
+                />
+              </div>
+
+              {/* Dropdown Results */}
+              {!selectedMember && searchTerm.length > 1 && (
+                <div className="absolute top-full left-0 right-0 mt-3 bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 max-h-80 overflow-y-auto z-50 p-2">
+                  {filteredMembers.map(m => (
+                    <button
+                      key={m.id}
+                      onClick={() => handleMemberSelect(m)}
+                      className="w-full text-left px-4 py-3 hover:bg-indigo-50 rounded-xl flex items-center justify-between group transition-colors mb-1"
+                    >
+                      <div className="flex items-center">
+                        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center mr-3 text-slate-400 group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
+                          <UserIcon className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-800 group-hover:text-indigo-700">{m.name}</p>
+                          <p className="text-xs text-slate-400 font-medium">{m.phone}</p>
+                        </div>
+                      </div>
+                      <span className="text-xs font-bold bg-slate-100 px-2.5 py-1 rounded-lg text-slate-500 group-hover:bg-white group-hover:shadow-sm">{m.fellowship}</span>
+                    </button>
+                  ))}
+                  {filteredMembers.length === 0 && (
+                    <div className="p-4">
+                      <div className="text-center text-slate-400 text-sm font-medium mb-3">No members found matching "{searchTerm}"</div>
+                      <button
+                        onClick={openQuickAdd}
+                        className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold flex items-center justify-center transition-colors shadow-lg shadow-indigo-200"
+                      >
+                        <UserPlus className="w-5 h-5 mr-2" />
+                        Add "{searchTerm}" as New Member
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          )}
-        </div>
 
-        {/* Quick Add Modal */}
-        {isAddMemberOpen && createPortal(
-          <div
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in"
-            onClick={() => setIsAddMemberOpen(false)}
-          >
-            <div
-              className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden relative"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="bg-[#1e1e2d] px-8 py-6 flex justify-between items-center">
-                <h3 className="text-xl font-bold text-white">Add New Member</h3>
-                <button onClick={() => setIsAddMemberOpen(false)} className="text-white/50 hover:text-white transition-colors">
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
+            {/* Quick Add Modal */}
+            {isAddMemberOpen && createPortal(
+              <div
+                className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in"
+                onClick={() => setIsAddMemberOpen(false)}
+              >
+                <div
+                  className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden relative"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="bg-[#1e1e2d] px-8 py-6 flex justify-between items-center">
+                    <h3 className="text-xl font-bold text-white">Add New Member</h3>
+                    <button onClick={() => setIsAddMemberOpen(false)} className="text-white/50 hover:text-white transition-colors">
+                      <X className="w-6 h-6" />
+                    </button>
+                  </div>
 
-              <div className="p-8 space-y-6">
-                <div>
-                  <label className="block text-sm font-bold text-slate-500 mb-2 uppercase tracking-wider">Full Name</label>
-                  <input
-                    type="text"
-                    value={newMemberName}
-                    onChange={(e) => setNewMemberName(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    autoFocus
-                  />
-                </div>
+                  <div className="p-8 space-y-6">
+                    <div>
+                      <label className="block text-sm font-bold text-slate-500 mb-2 uppercase tracking-wider">Full Name</label>
+                      <input
+                        type="text"
+                        value={newMemberName}
+                        onChange={(e) => setNewMemberName(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        autoFocus
+                      />
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-bold text-slate-500 mb-2 uppercase tracking-wider">Phone Number</label>
-                  <input
-                    type="tel"
-                    value={newMemberPhone}
-                    onChange={(e) => setNewMemberPhone(e.target.value)}
-                    placeholder="024XXXXXXX"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-500 mb-2 uppercase tracking-wider">Phone Number</label>
+                      <input
+                        type="tel"
+                        value={newMemberPhone}
+                        onChange={(e) => setNewMemberPhone(e.target.value)}
+                        placeholder="024XXXXXXX"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-bold text-slate-500 mb-2 uppercase tracking-wider">Fellowship & Pastor</label>
-                  <div className="relative">
-                    <select
-                      value={newMemberFellowship}
-                      onChange={(e) => setNewMemberFellowship(e.target.value as Fellowship)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pr-10 font-bold text-slate-800 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    >
-                      {Object.values(Fellowship).map((f) => (
-                        <option key={f} value={f}>
-                          {f} - {FELLOWSHIP_PASTORS[f]}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                      <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                        <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                      </svg>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-500 mb-2 uppercase tracking-wider">Fellowship & Pastor</label>
+                      <div className="relative">
+                        <select
+                          value={newMemberFellowship}
+                          onChange={(e) => setNewMemberFellowship(e.target.value as Fellowship)}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pr-10 font-bold text-slate-800 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                          {Object.values(Fellowship).map((f) => (
+                            <option key={f} value={f}>
+                              {f} - {FELLOWSHIP_PASTORS[f]}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                          <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                            <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-4">
+                      <button
+                        onClick={handleQuickAdd}
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-[0.98]"
+                      >
+                        Save & Select Member
+                      </button>
                     </div>
                   </div>
                 </div>
+              </div>,
+              document.body
+            )}
 
-                <div className="pt-4">
-                  <button
-                    onClick={handleQuickAdd}
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-[0.98]"
-                  >
-                    Save & Select Member
-                  </button>
-                </div>
+            {/* 2. Amount Input */}
+            <div className="flex flex-col justify-center mb-4 md:mb-8 relative py-2 md:py-0">
+              <div className="absolute inset-0 bg-gradient-to-b from-indigo-50/30 to-transparent rounded-3xl -z-10 opacity-0 transition-opacity duration-500" style={{ opacity: selectedMember ? 1 : 0 }}></div>
+              <label className="block text-sm font-bold text-slate-500 mb-2 md:mb-6 text-center uppercase tracking-wider">2. Enter Amount</label>
+              <div className="flex items-center justify-center px-8">
+                <span className={`text-3xl md:text-5xl font-bold transition-colors duration-300 mr-2 md:mr-4 ${amount ? 'text-indigo-300' : 'text-slate-200'}`}>GH₵</span>
+                <input
+                  ref={amountInputRef}
+                  type="number"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+                  onWheel={(e) => (e.target as HTMLInputElement).blur()}
+                  className="flex-1 bg-transparent text-center text-5xl md:text-8xl font-black text-indigo-900 focus:outline-none placeholder-slate-200 drop-shadow-sm min-w-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  placeholder="0.00"
+                  disabled={!selectedMember}
+                />
               </div>
             </div>
-          </div>,
-          document.body
-        )}
 
-        {/* 2. Amount Input */}
-        <div className="flex-1 flex flex-col justify-center mb-8 relative">
-          <div className="absolute inset-0 bg-gradient-to-b from-indigo-50/30 to-transparent rounded-3xl -z-10 opacity-0 transition-opacity duration-500" style={{ opacity: selectedMember ? 1 : 0 }}></div>
-          <label className="block text-sm font-bold text-slate-500 mb-6 text-center uppercase tracking-wider">2. Enter Amount</label>
-          <div className="flex items-center justify-center px-8">
-            <span className={`text-5xl font-bold transition-colors duration-300 mr-4 ${amount ? 'text-indigo-300' : 'text-slate-200'}`}>GH₵</span>
-            <input
-              ref={amountInputRef}
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-              onWheel={(e) => (e.target as HTMLInputElement).blur()}
-              className="flex-1 bg-transparent text-center text-8xl font-black text-indigo-900 focus:outline-none placeholder-slate-200 drop-shadow-sm min-w-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              placeholder="0.00"
-              disabled={!selectedMember}
-            />
-          </div>
-        </div>
+            {/* 3. Method Selection */}
+            <div className="grid grid-cols-2 gap-3 md:gap-4 mb-6 md:mb-8">
+              {[PaymentMethod.CASH, PaymentMethod.MOMO].map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setMethod(m)}
+                  className={`py-3 md:py-4 rounded-xl md:rounded-2xl font-bold text-xs md:text-sm transition-all relative overflow-hidden ${method === m
+                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-300 scale-105 ring-4 ring-indigo-50'
+                    : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:border-slate-300'
+                    }`}
+                >
+                  {method === m && <div className="absolute inset-0 bg-white/20"></div>}
+                  {m}
+                </button>
+              ))}
+            </div>
 
-        {/* 3. Method Selection */}
-        <div className="grid grid-cols-2 gap-4 mb-8">
-          {[PaymentMethod.CASH, PaymentMethod.MOMO].map((m) => (
             <button
-              key={m}
-              onClick={() => setMethod(m)}
-              className={`py-4 rounded-2xl font-bold text-sm transition-all relative overflow-hidden ${method === m
-                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-300 scale-105 ring-4 ring-indigo-50'
-                : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:border-slate-300'
-                }`}
+              onClick={() => handleSubmit()}
+              disabled={!selectedMember || !amount}
+              className="w-full bg-slate-900 text-white font-bold py-3.5 md:py-5 rounded-xl md:rounded-2xl text-sm md:text-lg flex items-center justify-center shadow-xl shadow-slate-200 hover:shadow-2xl hover:shadow-indigo-900/20 hover:bg-indigo-900 active:scale-[0.98] transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none"
             >
-              {method === m && <div className="absolute inset-0 bg-white/20"></div>}
-              {m}
+              <Check className="w-5 h-5 md:w-6 md:h-6 mr-2" />
+              CONFIRM TRANSACTION
             </button>
-          ))}
-        </div>
 
-        <button
-          onClick={() => handleSubmit()}
-          disabled={!selectedMember || !amount}
-          className="w-full bg-slate-900 text-white font-bold py-5 rounded-2xl text-lg flex items-center justify-center shadow-xl shadow-slate-200 hover:shadow-2xl hover:shadow-indigo-900/20 hover:bg-indigo-900 active:scale-[0.98] transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none"
-        >
-          <Check className="w-6 h-6 mr-2" />
-          CONFIRM TRANSACTION
-        </button>
-
-        <p className="text-center text-xs text-slate-400 mt-6 font-medium">
-          Press <kbd className="bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 text-slate-500">ENTER</kbd> to submit • <kbd className="bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 text-slate-500">CTRL+Z</kbd> to undo
-        </p>
+            <p className="text-center text-xs text-slate-400 mt-6 font-medium">
+              Press <kbd className="bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 text-slate-500">ENTER</kbd> to submit • <kbd className="bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 text-slate-500">CTRL+Z</kbd> to undo
+            </p>
+          </div>
+        )}
       </div>
+
 
       {/* RIGHT PANEL - FEED */}
       <div className="w-full lg:w-7/12 flex flex-col h-full">
@@ -584,7 +692,15 @@ export const Entry: React.FC = () => {
                       GH₵{txn.amount.toLocaleString()}
                     </td>
                     <td className="px-4 py-4 rounded-r-xl text-center">
-                      <button className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all">
+                      <button
+                        onClick={() => {
+                          if (window.confirm('Are you sure you want to delete this transaction?')) {
+                            deleteTransaction(txn.id);
+                          }
+                        }}
+                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete Transaction"
+                      >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </td>

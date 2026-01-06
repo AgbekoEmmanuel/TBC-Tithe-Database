@@ -129,23 +129,25 @@ export const Dashboard: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { label: 'Total Tithe', amount: fmt(totalAmount), icon: CreditCard, color: 'text-orange-500', bg: 'bg-orange-100' },
-              { label: 'Active Givers', amount: activeGivers, icon: Users, color: 'text-cyan-500', bg: 'bg-cyan-100' },
-              { label: 'Avg. Gift', amount: fmt(avgGift), icon: TrendingUp, color: 'text-purple-500', bg: 'bg-purple-100' }
+              { label: 'Total Tithe', amount: fmt(totalAmount), icon: CreditCard, color: 'text-orange-600', bg: 'bg-orange-50 ring-1 ring-orange-100', shadow: 'shadow-orange-100' },
+              { label: 'Active Givers', amount: activeGivers, icon: Users, color: 'text-cyan-600', bg: 'bg-cyan-50 ring-1 ring-cyan-100', shadow: 'shadow-cyan-100' },
+              { label: 'Avg. Tithe', amount: fmt(avgGift), icon: TrendingUp, color: 'text-purple-600', bg: 'bg-purple-50 ring-1 ring-purple-100', shadow: 'shadow-purple-100' }
             ].map((stat, i) => (
-              <div key={i} className="glass-panel p-6 flex flex-col justify-between h-48 relative">
-                <div className="flex justify-between items-start">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${stat.bg}`}>
-                    <stat.icon className={`w-6 h-6 ${stat.color}`} />
+              <div key={i} className="bg-white rounded-3xl p-6 relative transition-all duration-300 hover:shadow-xl hover:shadow-indigo-900/5 hover:-translate-y-1 border border-slate-100 shadow-sm group">
+                <div className="flex justify-between items-start mb-8">
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 duration-300 ${stat.bg}`}>
+                    <stat.icon className={`w-7 h-7 ${stat.color}`} />
                   </div>
-                  <button className="text-gray-400 hover:text-gray-600">
+                  <button className="text-slate-300 hover:text-slate-500 transition-colors p-1 rounded-full hover:bg-slate-50">
                     <MoreHorizontal className="w-5 h-5" />
                   </button>
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-[#1e1e2d]">{stat.amount}</h3>
-                  <p className="text-gray-400 font-medium text-sm mt-1">{stat.label}</p>
+                  <h3 className="text-3xl font-black text-slate-800 tracking-tight mb-1">{stat.amount}</h3>
+                  <p className="text-slate-500 font-bold text-sm uppercase tracking-wider opacity-80">{stat.label}</p>
                 </div>
+                {/* Decorative background element */}
+                <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-white to-transparent opacity-50 rounded-full blur-3xl -z-10 ${stat.shadow}`}></div>
               </div>
             ))}
           </div>
@@ -159,32 +161,32 @@ export const Dashboard: React.FC = () => {
               </div>
             </div>
 
-            <div className="glass-panel p-2">
-              <table className="w-full">
+            <div className="glass-panel p-2 overflow-x-auto">
+              <table className="w-full min-w-[700px]">
                 <thead>
                   <tr className="text-left text-xs font-semibold text-gray-400 border-b border-gray-100">
-                    <th className="px-3 py-3">ID</th>
-                    <th className="px-3 py-3">Date</th>
-                    <th className="px-3 py-3">Fellowship</th>
-                    <th className="px-3 py-3">Method</th>
-                    <th className="px-3 py-3">Member</th>
-                    <th className="px-3 py-3 text-right">Amount</th>
+                    <th className="px-3 py-3 whitespace-nowrap">ID</th>
+                    <th className="px-3 py-3 whitespace-nowrap">Date</th>
+                    <th className="px-3 py-3 whitespace-nowrap">Fellowship</th>
+                    <th className="px-3 py-3 whitespace-nowrap">Method</th>
+                    <th className="px-3 py-3 whitespace-nowrap">Member</th>
+                    <th className="px-3 py-3 text-right whitespace-nowrap">Amount</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {transactions.slice(0, 5).map((txn, i) => (
                     <tr key={txn.id} className="hover:bg-gray-50/50 transition-colors">
                       <td className="px-3 py-3">
-                        <span className="font-bold text-gray-700 text-xs">{txn.id.slice(-6)}</span>
+                        <span className="font-bold text-gray-700 text-xs whitespace-nowrap">{txn.id.slice(-6)}</span>
                       </td>
                       <td className="px-3 py-3 text-xs font-semibold text-gray-600 whitespace-nowrap">
                         {new Date(txn.timestamp).toLocaleDateString()}
                       </td>
-                      <td className="px-3 py-3 text-xs font-bold" style={{ color: getFellowshipColorHex(txn.fellowship) }}>
+                      <td className="px-3 py-3 text-xs font-bold whitespace-nowrap" style={{ color: getFellowshipColorHex(txn.fellowship) }}>
                         {txn.fellowship}
                       </td>
-                      <td className="px-3 py-3 text-xs font-semibold text-gray-600">{txn.method}</td>
-                      <td className="px-3 py-3 text-xs font-bold text-gray-700 max-w-[160px] truncate" title={txn.memberName}>{txn.memberName}</td>
+                      <td className="px-3 py-3 text-xs font-semibold text-gray-600 whitespace-nowrap">{txn.method}</td>
+                      <td className="px-3 py-3 text-xs font-bold text-gray-700 whitespace-nowrap max-w-[200px] truncate" title={txn.memberName}>{txn.memberName}</td>
                       <td className="px-3 py-3 text-right text-emerald-500 font-bold whitespace-nowrap">GH₵{txn.amount.toLocaleString()}</td>
                     </tr>
                   ))}
@@ -242,15 +244,19 @@ export const Dashboard: React.FC = () => {
 
           <div className="glass-panel p-8">
             <div className="space-y-6">
-              {getFellowshipData().map((item, i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <span className="w-32 font-bold text-gray-600 text-sm truncate">{item.name}</span>
-                  <div className="flex-1 h-2 bg-gray-100 rounded-full mx-4 overflow-hidden">
-                    <div className="h-full rounded-full" style={{ width: `${(item.value / 12500) * 100}%`, backgroundColor: item.color }}></div>
+              {(() => {
+                const data = getFellowshipData();
+                const maxVal = Math.max(...data.map(d => d.value), 1);
+                return data.map((item, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <span className="w-32 font-bold text-gray-600 text-sm truncate">{item.name}</span>
+                    <div className="flex-1 h-2 bg-gray-100 rounded-full mx-4 overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${(item.value / maxVal) * 100}%`, backgroundColor: item.color }}></div>
+                    </div>
+                    <span className="w-16 text-right font-bold text-gray-800 text-sm">₵{item.value.toLocaleString()}</span>
                   </div>
-                  <span className="w-16 text-right font-bold text-gray-800 text-sm">₵{item.value.toLocaleString()}</span>
-                </div>
-              ))}
+                ));
+              })()}
             </div>
           </div>
         </div>
