@@ -54,6 +54,9 @@ export const Login: React.FC = () => {
     await login(email, password);
   };
 
+  /* State for mobile view toggle */
+  const [showMobileLogin, setShowMobileLogin] = useState(false);
+
   const getSlideClass = (index: number) => {
     if (index === currentSlide) return 'animate-slide-in opacity-100 z-20';
     if (index === (currentSlide - 1 + slides.length) % slides.length) return 'animate-slide-out opacity-100 z-10';
@@ -82,8 +85,9 @@ export const Login: React.FC = () => {
       {/* Centered Container for both panels */}
       <div className="w-full max-w-[1200px] h-[85vh] max-h-[750px] flex shadow-2xl rounded-[2rem] relative">
 
-        {/* Left Panel */}
-        <div className="hidden lg:flex w-1/2 flex-col justify-center items-center relative rounded-[2rem] overflow-hidden bg-[#242424] h-full">
+        {/* Left Panel (Slideshow) */}
+        {/* Mobile: Visible if !showMobileLogin. Desktop: Always visible. */}
+        <div className={`${showMobileLogin ? 'hidden' : 'flex'} lg:flex w-full lg:w-1/2 flex-col justify-center items-center relative rounded-[2rem] overflow-hidden bg-[#242424] h-full`}>
           <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-black/40 to-transparent z-10"></div>
           {/* Decorative Circles - Scaled down */}
           <div className="absolute top-1/4 left-1/4 w-80 h-80 border border-white/5 rounded-full z-0"></div>
@@ -94,7 +98,7 @@ export const Login: React.FC = () => {
               key={index}
               className={`absolute inset-0 flex flex-col justify-center items-center ${getSlideClass(index)}`}
             >
-              <div className="text-center mb-6 px-8">
+              <div className="text-center mb-6 px-8 mt-[-4rem]"> {/* Lifted up slightly to fit button on mobile */}
                 <p className="text-gray-400 text-[10px] uppercase tracking-widest mb-2 font-medium">
                   {slide.subtitle}
                 </p>
@@ -111,6 +115,17 @@ export const Login: React.FC = () => {
             </div>
           ))}
 
+          {/* Mobile "Proceed to Login" Button */}
+          <div className="absolute bottom-16 lg:hidden z-40 w-full flex justify-center px-8">
+            <button
+              onClick={() => setShowMobileLogin(true)}
+              className="flex items-center space-x-2 text-white font-medium text-sm border border-white/30 bg-white/10 backdrop-blur-md px-6 py-3 rounded-full hover:bg-white/20 transition-all group"
+            >
+              <span>Proceed to Login</span>
+              <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+            </button>
+          </div>
+
           {/* Slide Indicators */}
           <div className="absolute bottom-6 left-0 w-full flex justify-center space-x-2 z-30">
             {slides.map((_, index) => (
@@ -124,9 +139,18 @@ export const Login: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Panel */}
-        <div className="w-full lg:w-1/2 bg-white rounded-[2rem] flex flex-col justify-center items-center p-8 relative lg:ml-[-1.5rem] z-30 h-full">
+        {/* Right Panel (Login Form) */}
+        {/* Mobile: Visible if showMobileLogin. Desktop: Always visible. */}
+        <div className={`${showMobileLogin ? 'flex' : 'hidden'} lg:flex w-full lg:w-1/2 bg-white rounded-[2rem] flex-col justify-center items-center p-8 relative lg:ml-[-1.5rem] z-30 h-full`}>
           <div className="w-full max-w-sm space-y-5">
+
+            {/* Mobile Back Button (Optional improvement for UX) */}
+            <button
+              onClick={() => setShowMobileLogin(false)}
+              className="lg:hidden absolute top-6 left-6 text-gray-400 hover:text-gray-600 flex items-center space-x-1 text-xs"
+            >
+              <span>← Back</span>
+            </button>
 
             {/* Header */}
             <div className="flex justify-between items-start">
