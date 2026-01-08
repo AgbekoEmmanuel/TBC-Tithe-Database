@@ -64,7 +64,7 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="h-screen max-h-screen bg-[#1a1a1a] flex justify-center items-center p-4 overflow-hidden font-['Poppins']">
+    <div className="min-h-[100dvh] bg-[#1a1a1a] flex justify-center items-center lg:p-4 overflow-hidden font-['Poppins']">
       <style>{`
         @keyframes slideInRight {
           from { transform: translateX(100%); }
@@ -83,11 +83,12 @@ export const Login: React.FC = () => {
       `}</style>
 
       {/* Centered Container for both panels */}
-      <div className="w-full max-w-[1200px] h-[85vh] max-h-[750px] flex shadow-2xl rounded-[2rem] relative">
+      {/* Mobile: Full width/height, no radius. Desktop: Max width, fixed height, radius. */}
+      <div className="w-full lg:max-w-[1200px] h-[100dvh] lg:h-[85vh] lg:max-h-[750px] flex shadow-2xl rounded-none lg:rounded-[2rem] relative">
 
         {/* Left Panel (Slideshow) */}
         {/* Mobile: Visible if !showMobileLogin. Desktop: Always visible. */}
-        <div className={`${showMobileLogin ? 'hidden' : 'flex'} lg:flex w-full lg:w-1/2 flex-col justify-center items-center relative rounded-[2rem] overflow-hidden bg-[#242424] h-full`}>
+        <div className={`${showMobileLogin ? 'hidden' : 'flex'} lg:flex w-full lg:w-1/2 flex-col justify-center items-center relative rounded-none lg:rounded-[2rem] overflow-hidden bg-[#242424] h-full`}>
           <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-black/40 to-transparent z-10"></div>
           {/* Decorative Circles - Scaled down */}
           <div className="absolute top-1/4 left-1/4 w-80 h-80 border border-white/5 rounded-full z-0"></div>
@@ -119,7 +120,7 @@ export const Login: React.FC = () => {
           <div className="absolute bottom-16 lg:hidden z-40 w-full flex justify-center px-8">
             <button
               onClick={() => setShowMobileLogin(true)}
-              className="flex items-center space-x-2 text-white font-medium text-sm border border-white/30 bg-white/10 backdrop-blur-md px-6 py-3 rounded-full hover:bg-white/20 transition-all group"
+              className="flex items-center space-x-2 text-white font-medium text-sm border border-white/30 bg-white/10 backdrop-blur-md px-6 py-3 rounded-full hover:bg-white/20 transition-all group active:scale-95"
             >
               <span>Proceed to Login</span>
               <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
@@ -141,7 +142,7 @@ export const Login: React.FC = () => {
 
         {/* Right Panel (Login Form) */}
         {/* Mobile: Visible if showMobileLogin. Desktop: Always visible. */}
-        <div className={`${showMobileLogin ? 'flex' : 'hidden'} lg:flex w-full lg:w-1/2 bg-white rounded-[2rem] flex-col justify-center items-center p-8 relative lg:ml-[-1.5rem] z-30 h-full`}>
+        <div className={`${showMobileLogin ? 'flex' : 'hidden'} lg:flex w-full lg:w-1/2 bg-white rounded-none lg:rounded-[2rem] flex-col justify-center items-center p-8 relative lg:ml-[-1.5rem] z-30 h-full`}>
           <div className="w-full max-w-sm space-y-5">
 
             {/* Mobile Back Button (Optional improvement for UX) */}

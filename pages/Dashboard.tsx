@@ -143,7 +143,7 @@ export const Dashboard: React.FC = () => {
                   </button>
                 </div>
                 <div>
-                  <h3 className="text-3xl font-black text-slate-800 tracking-tight mb-1">{stat.amount}</h3>
+                  <h3 className="text-2xl font-black text-slate-800 tracking-tight mb-1">{stat.amount}</h3>
                   <p className="text-slate-500 font-bold text-sm uppercase tracking-wider opacity-80">{stat.label}</p>
                 </div>
                 {/* Decorative background element */}
