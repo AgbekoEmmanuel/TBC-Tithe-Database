@@ -29,12 +29,41 @@ const RequireAuth: React.FC<{ children: React.ReactNode, allowedRoles?: Role[] }
 
 const App: React.FC = () => {
   const { fetchData } = useDataStore();
-  const { checkAuth } = useAuthStore();
+  const { logout, checkAuth } = useAuthStore();
 
   React.useEffect(() => {
     checkAuth();
     fetchData();
-  }, [fetchData, checkAuth]);
+
+    // Idle Timer Logic (2 minutes = 120,000 ms)
+    let timeoutId: NodeJS.Timeout;
+
+    const resetTimer = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        logout();
+      }, 120000);
+    };
+
+    // Events to track activity
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+
+    // Attach listeners
+    events.forEach(event => {
+      document.addEventListener(event, resetTimer);
+    });
+
+    // Initialize timer
+    resetTimer();
+
+    // Cleanup
+    return () => {
+      clearTimeout(timeoutId);
+      events.forEach(event => {
+        document.removeEventListener(event, resetTimer);
+      });
+    };
+  }, [fetchData, checkAuth, logout]);
 
   return (
     <Routes>
