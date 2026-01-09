@@ -7,8 +7,6 @@ import {
   Target,
   ArrowUpRight,
   MoreHorizontal,
-  ArrowUpRight,
-  MoreHorizontal,
   Hash,
   Crown
 } from 'lucide-react';
