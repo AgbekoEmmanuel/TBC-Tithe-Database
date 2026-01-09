@@ -176,7 +176,7 @@ export const Admin: React.FC = () => {
 
             {/* User Management Section - RESTRICTED TO SUPERVISORS */}
             {user?.role === 'SUPERVISOR' && (
-                <div className="glass-card p-8">
+                <div className="glass-card p-4 md:p-8">
                     <div className="flex items-center space-x-4 mb-6 pb-6 border-b border-slate-100">
                         <div className="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600">
                             <Check className="w-6 h-6" />
@@ -264,7 +264,7 @@ export const Admin: React.FC = () => {
                             Registered Officers
                         </h4>
 
-                        <div className="overflow-hidden rounded-xl border border-slate-200">
+                        <div className="overflow-x-auto rounded-xl border border-slate-200 w-full max-w-[calc(100vw-4rem)] md:max-w-full">
                             <table className="w-full text-left border-collapse">
                                 <thead>
                                     <tr className="bg-slate-50 border-b border-slate-200 text-xs uppercase text-slate-500">
@@ -423,7 +423,7 @@ export const Admin: React.FC = () => {
             )}
 
             {/* Legacy Import Section */}
-            <div className="glass-card p-8">
+            <div className="glass-card p-4 md:p-8">
                 <div className="flex items-center space-x-4 mb-6 pb-6 border-b border-slate-100">
                     <div className="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600">
                         <Database className="w-6 h-6" />
@@ -561,7 +561,7 @@ export const Admin: React.FC = () => {
                 )}
             </div>
             {/* Export Section */}
-            <div className="glass-card p-8">
+            <div className="glass-card p-4 md:p-8">
                 <div className="flex items-center space-x-4 mb-6 pb-6 border-b border-slate-100">
                     <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600">
                         <FileSpreadsheet className="w-6 h-6" />

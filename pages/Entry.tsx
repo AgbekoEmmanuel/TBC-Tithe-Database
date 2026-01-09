@@ -402,7 +402,7 @@ export const Entry: React.FC = () => {
                     </button>
                   </div>
 
-                  <div className="p-8 space-y-6">
+                  <div className="p-4 md:p-8 space-y-6">
                     <div>
                       <label className="block text-sm font-bold text-slate-500 mb-2 uppercase tracking-wider">Full Name</label>
                       <input
@@ -660,7 +660,7 @@ export const Entry: React.FC = () => {
               {transactions.length} Records
             </span>
           </div>
-          <div className="overflow-y-auto flex-1 p-1 md:p-2">
+          <div className="overflow-x-auto flex-1 p-1 md:p-2 w-full max-w-[calc(100vw-2rem)] md:max-w-full">
             <table className="w-full border-separate border-spacing-y-1">
               <thead className="sticky top-0 z-10">
                 <tr className="text-left text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider">

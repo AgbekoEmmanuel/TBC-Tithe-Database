@@ -298,7 +298,7 @@ export const Analytics: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Monthly Trend */}
-        <div className="dark-card p-8 shadow-xl shadow-indigo-900/10 relative">
+        <div className="dark-card p-4 md:p-8 shadow-xl shadow-indigo-900/10 relative">
           <div className="flex justify-between items-start mb-6">
             <h3 className="text-xl font-bold text-white">Giving Trend</h3>
             <TimeFilter value={trendFilter} onChange={setTrendFilter} dark={true} />
@@ -342,7 +342,7 @@ export const Analytics: React.FC = () => {
         </div>
 
         {/* Method Distribution */}
-        <div className="dark-card p-8 shadow-xl shadow-indigo-900/10 relative">
+        <div className="dark-card p-4 md:p-8 shadow-xl shadow-indigo-900/10 relative">
           <div className="flex justify-between items-start mb-6">
             <h3 className="text-xl font-bold text-white">Method Distribution</h3>
             <TimeFilter value={distFilter} onChange={setDistFilter} dark={true} />
@@ -400,7 +400,7 @@ export const Analytics: React.FC = () => {
         </div>
 
         {/* Fellowship Performance (Weekly) */}
-        <div className="dark-card p-8 shadow-xl shadow-indigo-900/10 relative col-span-1 lg:col-span-2">
+        <div className="dark-card p-4 md:p-8 shadow-xl shadow-indigo-900/10 relative col-span-1 lg:col-span-2">
           <div className="flex justify-between items-start mb-6">
             <div>
               <h3 className="text-xl font-bold text-white">Fellowship Performance</h3>
@@ -411,7 +411,7 @@ export const Analytics: React.FC = () => {
                 Our logic currently ignores Week filter in 'getFellowshipWeeklyData'. */}
             <TimeFilter value={fellowshipFilter} onChange={setFellowshipFilter} dark={true} />
           </div>
-          <div className="h-[400px] w-full overflow-x-auto">
+          <div className="h-[400px] w-full overflow-x-auto max-w-[calc(100vw-4rem)] md:max-w-full">
             <div className="min-w-[800px] h-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={getFellowshipWeeklyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>

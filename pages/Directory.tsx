@@ -301,7 +301,7 @@ export const Directory: React.FC = () => {
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto w-full max-w-[calc(100vw-2rem)] md:max-w-full">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100">
