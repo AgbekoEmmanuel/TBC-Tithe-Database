@@ -228,7 +228,7 @@ export const Entry: React.FC = () => {
               <p className="text-slate-500 font-medium text-[10px] md:text-sm">Select the period for these transactions</p>
             </div>
 
-            <div className="space-y-2 md:space-y-4 mx-0 md:mx-auto w-full max-w-[calc(100vw-2rem)] md:max-w-sm px-0 md:px-1">
+            <div className="space-y-2 md:space-y-4 mx-0 md:mx-auto w-full max-w-[90%] md:max-w-sm px-0 md:px-1">
               {/* Year */}
               <div>
                 <label className="block text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Fiscal Year</label>
