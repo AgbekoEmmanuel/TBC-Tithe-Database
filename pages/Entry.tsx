@@ -246,7 +246,7 @@ export const Entry: React.FC = () => {
               {/* Month */}
               <div>
                 <label className="block text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 md:mb-1.5">Month</label>
-                <div className="grid grid-cols-4 md:grid-cols-2 gap-1 md:gap-1.5">
+                <div className="grid grid-cols-3 md:grid-cols-2 gap-1 md:gap-1.5">
                   {['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'].map((m) => (
                     <button
                       key={m}
