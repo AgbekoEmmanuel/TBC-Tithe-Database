@@ -214,28 +214,28 @@ export const Entry: React.FC = () => {
   }, [undoLastTransaction]);
 
   return (
-    <div className="h-full flex flex-col lg:flex-row gap-6 animate-fade-in pb-20">
+    <div className="h-full flex flex-col lg:flex-row gap-4 md:gap-6 animate-fade-in pb-4 md:pb-20">
       {/* Left Panel - Entry Form */}
       <div className="w-full lg:w-5/12 flex flex-col h-full glass-panel p-4 md:p-8 relative border-gray-200">
         {!isSessionActive ? (
           // SESSION SETUP VIEW
-          <div className="flex flex-col h-full justify-start pt-4 md:justify-center md:pt-0 animate-fade-in">
-            <div className="mb-4 md:mb-10 text-center">
-              <div className="w-14 h-14 md:w-20 md:h-20 bg-indigo-100 rounded-2xl md:rounded-3xl flex items-center justify-center mx-auto mb-3 md:mb-6 text-indigo-600 shadow-inner">
-                <Calendar className="w-7 h-7 md:w-10 md:h-10" />
+          <div className="flex flex-col h-full justify-start pt-2 md:justify-center md:pt-0 animate-fade-in">
+            <div className="mb-3 md:mb-10 text-center">
+              <div className="w-10 h-10 md:w-20 md:h-20 bg-indigo-100 rounded-xl md:rounded-3xl flex items-center justify-center mx-auto mb-2 md:mb-6 text-indigo-600 shadow-inner">
+                <Calendar className="w-5 h-5 md:w-10 md:h-10" />
               </div>
-              <h2 className="text-xl md:text-3xl font-black text-slate-800 mb-1 md:mb-2">Start a Session</h2>
-              <p className="text-slate-500 font-medium text-xs md:text-base">Select the period for these transactions</p>
+              <h2 className="text-lg md:text-3xl font-black text-slate-800 mb-0.5 md:mb-2">Start a Session</h2>
+              <p className="text-slate-500 font-medium text-[10px] md:text-base">Select the period for these transactions</p>
             </div>
 
-            <div className="space-y-4 md:space-y-6 max-w-sm mx-auto w-full">
+            <div className="space-y-2 md:space-y-6 max-w-sm mx-auto w-full">
               {/* Year */}
               <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Fiscal Year</label>
+                <label className="block text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Fiscal Year</label>
                 <select
                   value={sessionYear}
                   onChange={(e) => setSessionYear(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 md:py-4 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow appearance-none cursor-pointer hover:bg-slate-100"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg md:rounded-xl px-4 py-2 md:py-4 font-bold text-slate-700 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow appearance-none cursor-pointer hover:bg-slate-100"
                 >
                   <option value="2024">2024</option>
                   <option value="2025">2025</option>
@@ -518,10 +518,10 @@ export const Entry: React.FC = () => {
       {/* RIGHT PANEL - FEED */}
       <div className="w-full lg:w-7/12 flex flex-col h-full">
         {/* Stats Strip */}
-        <div className="glass-card mb-6 p-1 flex justify-between items-center pr-2">
-          <div className="flex-1 px-4 md:px-6 py-4">
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Session Total</p>
-            <p className="text-3xl md:text-4xl font-black text-slate-800 tracking-tight">
+        <div className="glass-card mb-4 md:mb-6 p-1 flex justify-between items-center pr-2">
+          <div className="flex-1 px-4 md:px-6 py-2 md:py-4">
+            <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-0.5 md:mb-1">Session Total</p>
+            <p className="text-xl md:text-4xl font-black text-slate-800 tracking-tight">
               GH₵{transactions.reduce((acc, t) => acc + t.amount, 0).toLocaleString()}
             </p>
           </div>
