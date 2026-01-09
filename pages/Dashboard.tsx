@@ -212,7 +212,7 @@ export const Dashboard: React.FC = () => {
             <TimeFilter value={velocityFilter} onChange={setVelocityFilter} />
           </div>
 
-          <div className="dark-card p-8 h-[320px] relative shadow-xl shadow-indigo-900/10">
+          <div className="dark-card p-8 h-[220px] relative shadow-xl shadow-indigo-900/10">
             {/* Chart Decoration */}
             <div className="absolute top-8 left-8">
               <div className="text-gray-500 text-xs font-bold mb-1">High</div>
