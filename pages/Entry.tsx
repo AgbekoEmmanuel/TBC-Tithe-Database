@@ -216,10 +216,10 @@ export const Entry: React.FC = () => {
   return (
     <div className="h-full flex flex-col lg:flex-row gap-4 md:gap-6 animate-fade-in pb-4 md:pb-20 overflow-x-hidden w-full">
       {/* Left Panel - Entry Form */}
-      <div className="w-full lg:w-5/12 flex flex-col h-full glass-panel p-4 md:p-6 relative border-gray-200">
+      <div className="w-full lg:w-5/12 flex flex-col h-full glass-panel p-2 md:p-6 relative border-gray-200 overflow-hidden">
         {!isSessionActive ? (
           // SESSION SETUP VIEW
-          <div className="flex flex-col h-full justify-start pt-2 md:justify-center md:pt-0 animate-fade-in">
+          <div className="flex flex-col h-full justify-start pt-2 md:justify-center md:pt-0 animate-fade-in w-full">
             <div className="mb-3 md:mb-6 text-center">
               <div className="w-10 h-10 md:w-16 md:h-16 bg-indigo-100 rounded-xl md:rounded-3xl flex items-center justify-center mx-auto mb-2 md:mb-4 text-indigo-600 shadow-inner">
                 <Calendar className="w-5 h-5 md:w-8 md:h-8" />
@@ -228,7 +228,7 @@ export const Entry: React.FC = () => {
               <p className="text-slate-500 font-medium text-[10px] md:text-sm">Select the period for these transactions</p>
             </div>
 
-            <div className="space-y-2 md:space-y-4 max-w-sm mx-auto w-full">
+            <div className="space-y-2 md:space-y-4 mx-auto w-full max-w-[calc(100vw-3rem)] md:max-w-sm px-1">
               {/* Year */}
               <div>
                 <label className="block text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Fiscal Year</label>
@@ -251,7 +251,7 @@ export const Entry: React.FC = () => {
                     <button
                       key={m}
                       onClick={() => setSessionMonth(m)}
-                      className={`py-1.5 md:py-1.5 px-0.5 rounded-lg text-[9px] md:text-[11px] font-bold transition-all ${sessionMonth === m
+                      className={`py-1 md:py-1.5 px-0.5 rounded-lg text-[9px] md:text-[11px] font-bold transition-all ${sessionMonth === m
                         ? 'bg-indigo-600 text-white shadow-md'
                         : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
                         }`}
