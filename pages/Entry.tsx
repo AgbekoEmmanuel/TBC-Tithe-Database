@@ -216,26 +216,26 @@ export const Entry: React.FC = () => {
   return (
     <div className="h-full flex flex-col lg:flex-row gap-6 animate-fade-in pb-20">
       {/* Left Panel - Entry Form */}
-      <div className="w-full lg:w-5/12 flex flex-col h-full glass-panel p-8 relative border-gray-200">
+      <div className="w-full lg:w-5/12 flex flex-col h-full glass-panel p-4 md:p-8 relative border-gray-200">
         {!isSessionActive ? (
           // SESSION SETUP VIEW
-          <div className="flex flex-col h-full justify-center animate-fade-in">
-            <div className="mb-10 text-center">
-              <div className="w-20 h-20 bg-indigo-100 rounded-3xl flex items-center justify-center mx-auto mb-6 text-indigo-600 shadow-inner">
-                <Calendar className="w-10 h-10" />
+          <div className="flex flex-col h-full justify-start pt-6 md:justify-center md:pt-0 animate-fade-in">
+            <div className="mb-6 md:mb-10 text-center">
+              <div className="w-16 h-16 md:w-20 md:h-20 bg-indigo-100 rounded-3xl flex items-center justify-center mx-auto mb-4 md:mb-6 text-indigo-600 shadow-inner">
+                <Calendar className="w-8 h-8 md:w-10 md:h-10" />
               </div>
-              <h2 className="text-3xl font-black text-slate-800 mb-2">Start New Session</h2>
-              <p className="text-slate-500 font-medium">Select the period for these transactions</p>
+              <h2 className="text-2xl md:text-3xl font-black text-slate-800 mb-2">Start a Session</h2>
+              <p className="text-slate-500 font-medium text-sm md:text-base">Select the period for these transactions</p>
             </div>
 
-            <div className="space-y-6 max-w-sm mx-auto w-full">
+            <div className="space-y-4 md:space-y-6 max-w-sm mx-auto w-full">
               {/* Year */}
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Fiscal Year</label>
                 <select
                   value={sessionYear}
                   onChange={(e) => setSessionYear(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-4 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow appearance-none cursor-pointer hover:bg-slate-100"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 md:py-4 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow appearance-none cursor-pointer hover:bg-slate-100"
                 >
                   <option value="2024">2024</option>
                   <option value="2025">2025</option>
@@ -246,12 +246,12 @@ export const Entry: React.FC = () => {
               {/* Month */}
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Month</label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 md:grid-cols-2 gap-1.5 md:gap-2">
                   {['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'].map((m) => (
                     <button
                       key={m}
                       onClick={() => setSessionMonth(m)}
-                      className={`py-2 px-1 rounded-lg text-xs font-bold transition-all ${sessionMonth === m
+                      className={`py-2.5 md:py-2 px-1 rounded-lg text-[10px] md:text-xs font-bold transition-all ${sessionMonth === m
                         ? 'bg-indigo-600 text-white shadow-md'
                         : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
                         }`}
@@ -270,7 +270,7 @@ export const Entry: React.FC = () => {
                     <button
                       key={w}
                       onClick={() => setSessionWeek(w)}
-                      className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all ${sessionWeek === w
+                      className={`flex-1 py-2.5 md:py-3 rounded-lg text-sm font-bold transition-all ${sessionWeek === w
                         ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5'
                         : 'text-slate-400 hover:text-slate-600'
                         }`}
@@ -283,7 +283,7 @@ export const Entry: React.FC = () => {
 
               <button
                 onClick={() => setIsSessionActive(true)}
-                className="w-full bg-indigo-600 text-white font-bold py-5 rounded-2xl text-lg hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 flex items-center justify-center mt-8 active:scale-[0.98]"
+                className="w-full bg-indigo-600 text-white font-bold py-3.5 md:py-5 rounded-2xl text-base md:text-lg hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 flex items-center justify-center mt-6 md:mt-8 active:scale-[0.98]"
               >
                 <Play className="w-5 h-5 mr-3 fill-current" />
                 Start Session
@@ -519,9 +519,9 @@ export const Entry: React.FC = () => {
       <div className="w-full lg:w-7/12 flex flex-col h-full">
         {/* Stats Strip */}
         <div className="glass-card mb-6 p-1 flex justify-between items-center pr-2">
-          <div className="flex-1 px-6 py-4">
+          <div className="flex-1 px-4 md:px-6 py-4">
             <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Session Total</p>
-            <p className="text-4xl font-black text-slate-800 tracking-tight">
+            <p className="text-3xl md:text-4xl font-black text-slate-800 tracking-tight">
               GH₵{transactions.reduce((acc, t) => acc + t.amount, 0).toLocaleString()}
             </p>
           </div>
@@ -529,13 +529,14 @@ export const Entry: React.FC = () => {
             <div className="relative" ref={filterWrapperRef}>
               <button
                 onClick={handleOpenFilter}
-                className={`flex items-center space-x-2 px-4 py-3 rounded-xl font-bold transition-all shadow-sm border ${isFilterOpen || appliedFilters.method !== 'ALL' || appliedFilters.fellowship !== 'ALL' || appliedFilters.min || appliedFilters.max || appliedFilters.startDate || appliedFilters.endDate
+                className={`flex items-center space-x-2 px-3 md:px-4 py-2 md:py-3 rounded-xl font-bold transition-all shadow-sm border ${isFilterOpen || appliedFilters.method !== 'ALL' || appliedFilters.fellowship !== 'ALL' || appliedFilters.min || appliedFilters.max || appliedFilters.startDate || appliedFilters.endDate
                   ? 'bg-indigo-600 text-white border-indigo-500 shadow-indigo-200'
                   : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                   }`}
               >
                 <Filter className="w-4 h-4" />
-                <span>Filter Transactions</span>
+                <span className="hidden md:inline">Filter Transactions</span>
+                <span className="md:hidden">Filter</span>
               </button>
 
               {/* Filter Popover */}
