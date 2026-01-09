@@ -219,13 +219,13 @@ export const Entry: React.FC = () => {
       <div className="w-full lg:w-5/12 flex flex-col h-full glass-panel p-4 md:p-8 relative border-gray-200">
         {!isSessionActive ? (
           // SESSION SETUP VIEW
-          <div className="flex flex-col h-full justify-start pt-6 md:justify-center md:pt-0 animate-fade-in">
-            <div className="mb-6 md:mb-10 text-center">
-              <div className="w-16 h-16 md:w-20 md:h-20 bg-indigo-100 rounded-3xl flex items-center justify-center mx-auto mb-4 md:mb-6 text-indigo-600 shadow-inner">
-                <Calendar className="w-8 h-8 md:w-10 md:h-10" />
+          <div className="flex flex-col h-full justify-start pt-4 md:justify-center md:pt-0 animate-fade-in">
+            <div className="mb-4 md:mb-10 text-center">
+              <div className="w-14 h-14 md:w-20 md:h-20 bg-indigo-100 rounded-2xl md:rounded-3xl flex items-center justify-center mx-auto mb-3 md:mb-6 text-indigo-600 shadow-inner">
+                <Calendar className="w-7 h-7 md:w-10 md:h-10" />
               </div>
-              <h2 className="text-2xl md:text-3xl font-black text-slate-800 mb-2">Start a Session</h2>
-              <p className="text-slate-500 font-medium text-sm md:text-base">Select the period for these transactions</p>
+              <h2 className="text-xl md:text-3xl font-black text-slate-800 mb-1 md:mb-2">Start a Session</h2>
+              <p className="text-slate-500 font-medium text-xs md:text-base">Select the period for these transactions</p>
             </div>
 
             <div className="space-y-4 md:space-y-6 max-w-sm mx-auto w-full">
@@ -245,13 +245,13 @@ export const Entry: React.FC = () => {
 
               {/* Month */}
               <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Month</label>
-                <div className="grid grid-cols-3 md:grid-cols-2 gap-1.5 md:gap-2">
+                <label className="block text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 md:mb-2">Month</label>
+                <div className="grid grid-cols-4 md:grid-cols-2 gap-1 md:gap-2">
                   {['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'].map((m) => (
                     <button
                       key={m}
                       onClick={() => setSessionMonth(m)}
-                      className={`py-2.5 md:py-2 px-1 rounded-lg text-[10px] md:text-xs font-bold transition-all ${sessionMonth === m
+                      className={`py-2 md:py-2 px-0.5 rounded-lg text-[9px] md:text-xs font-bold transition-all ${sessionMonth === m
                         ? 'bg-indigo-600 text-white shadow-md'
                         : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
                         }`}
@@ -270,7 +270,7 @@ export const Entry: React.FC = () => {
                     <button
                       key={w}
                       onClick={() => setSessionWeek(w)}
-                      className={`flex-1 py-2.5 md:py-3 rounded-lg text-sm font-bold transition-all ${sessionWeek === w
+                      className={`flex-1 py-2 md:py-3 rounded-lg text-xs md:text-sm font-bold transition-all ${sessionWeek === w
                         ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5'
                         : 'text-slate-400 hover:text-slate-600'
                         }`}
@@ -283,9 +283,9 @@ export const Entry: React.FC = () => {
 
               <button
                 onClick={() => setIsSessionActive(true)}
-                className="w-full bg-indigo-600 text-white font-bold py-3.5 md:py-5 rounded-2xl text-base md:text-lg hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 flex items-center justify-center mt-6 md:mt-8 active:scale-[0.98]"
+                className="w-full bg-indigo-600 text-white font-bold py-3 md:py-5 rounded-xl md:rounded-2xl text-sm md:text-lg hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 flex items-center justify-center mt-5 md:mt-8 active:scale-[0.98]"
               >
-                <Play className="w-5 h-5 mr-3 fill-current" />
+                <Play className="w-4 h-4 md:w-5 md:h-5 mr-2 md:mr-3 fill-current" />
                 Start Session
               </button>
             </div>
@@ -341,7 +341,7 @@ export const Entry: React.FC = () => {
                     setSelectedMember(null);
                   }}
                   placeholder="Type name or phone number..."
-                  className={`w-full text-lg font-medium border-2 rounded-2xl py-3.5 pl-14 pr-4 transition-all shadow-sm ${selectedMember
+                  className={`w-full text-base md:text-lg font-medium border-2 rounded-xl md:rounded-2xl py-2.5 md:py-3.5 pl-12 md:pl-14 pr-4 transition-all shadow-sm ${selectedMember
                     ? 'bg-indigo-50/50 border-indigo-200 text-indigo-900 shadow-indigo-100'
                     : 'bg-white/50 border-slate-200 focus:border-indigo-500 focus:bg-white focus:shadow-lg focus:shadow-indigo-100'
                     }`}
@@ -465,8 +465,8 @@ export const Entry: React.FC = () => {
             <div className="flex flex-col justify-center mb-4 md:mb-8 relative py-2 md:py-0">
               <div className="absolute inset-0 bg-gradient-to-b from-indigo-50/30 to-transparent rounded-3xl -z-10 opacity-0 transition-opacity duration-500" style={{ opacity: selectedMember ? 1 : 0 }}></div>
               <label className="block text-sm font-bold text-slate-500 mb-2 md:mb-6 text-center uppercase tracking-wider">2. Enter Amount</label>
-              <div className="flex items-center justify-center px-8">
-                <span className={`text-3xl md:text-5xl font-bold transition-colors duration-300 mr-2 md:mr-4 ${amount ? 'text-indigo-300' : 'text-slate-200'}`}>GH₵</span>
+              <div className="flex items-center justify-center px-4 md:px-8">
+                <span className={`text-2xl md:text-5xl font-bold transition-colors duration-300 mr-1 md:mr-4 ${amount ? 'text-indigo-300' : 'text-slate-200'}`}>GH₵</span>
                 <input
                   ref={amountInputRef}
                   type="number"
@@ -474,7 +474,7 @@ export const Entry: React.FC = () => {
                   onChange={(e) => setAmount(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
                   onWheel={(e) => (e.target as HTMLInputElement).blur()}
-                  className="flex-1 bg-transparent text-center text-5xl md:text-8xl font-black text-indigo-900 focus:outline-none placeholder-slate-200 drop-shadow-sm min-w-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  className="flex-1 bg-transparent text-center text-4xl md:text-8xl font-black text-indigo-900 focus:outline-none placeholder-slate-200 drop-shadow-sm min-w-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   placeholder="0.00"
                   disabled={!selectedMember}
                 />
@@ -714,8 +714,8 @@ export const Entry: React.FC = () => {
           {/* Pagination Controls */}
           {totalPages > 0 && (
             <div className="p-6 border-t border-slate-100 flex justify-between items-center text-sm font-medium">
-              <span className="text-slate-400">
-                Showing <span className="font-bold text-indigo-900">{Math.min((currentPage - 1) * itemsPerPage + 1, filteredTransactions.length)}</span> to <span className="font-bold text-indigo-900">{Math.min(currentPage * itemsPerPage, filteredTransactions.length)}</span> of <span className="font-bold text-indigo-900">{filteredTransactions.length}</span> entries
+              <span className="text-slate-400 text-xs md:text-sm">
+                Showing <span className="font-bold text-indigo-900">{Math.min((currentPage - 1) * itemsPerPage + 1, filteredTransactions.length)}</span>-<span className="font-bold text-indigo-900">{Math.min(currentPage * itemsPerPage, filteredTransactions.length)}</span> of <span className="font-bold text-indigo-900">{filteredTransactions.length}</span>
               </span>
 
               <div className="flex items-center space-x-2">
