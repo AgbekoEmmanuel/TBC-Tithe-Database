@@ -127,7 +127,7 @@ export const Dashboard: React.FC = () => {
   );
 
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in overflow-x-hidden w-full">
       {/* Top Section: KPI Cards + Main Chart */}
       <div className="flex flex-col xl:flex-row gap-8 mb-10">
 
