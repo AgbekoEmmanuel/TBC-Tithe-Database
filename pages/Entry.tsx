@@ -228,7 +228,7 @@ export const Entry: React.FC = () => {
               <p className="text-slate-500 font-medium text-[10px] md:text-sm">Select the period for these transactions</p>
             </div>
 
-            <div className="space-y-2 md:space-y-4 max-w-sm mx-auto w-full px-1">
+            <div className="space-y-2 md:space-y-4 w-full px-0">
               {/* Year */}
               <div>
                 <label className="block text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Fiscal Year</label>
@@ -265,12 +265,12 @@ export const Entry: React.FC = () => {
               {/* Week */}
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Week Number</label>
-                <div className="grid grid-cols-5 gap-1 bg-slate-100 p-1 rounded-xl">
+                <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
                   {[1, 2, 3, 4, 5].map((w) => (
                     <button
                       key={w}
                       onClick={() => setSessionWeek(w)}
-                      className={`py-2 md:py-2.5 rounded-lg text-xs md:text-sm font-bold transition-all ${sessionWeek === w
+                      className={`flex-1 py-1.5 md:py-2.5 rounded-lg text-xs md:text-sm font-bold transition-all min-w-0 ${sessionWeek === w
                         ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5'
                         : 'text-slate-400 hover:text-slate-600'
                         }`}
