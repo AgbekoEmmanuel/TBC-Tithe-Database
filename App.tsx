@@ -35,14 +35,14 @@ const App: React.FC = () => {
     checkAuth();
     fetchData();
 
-    // Idle Timer Logic (2 minutes = 120,000 ms)
+    // Idle Timer Logic (10 minutes = 600,000 ms)
     let timeoutId: NodeJS.Timeout;
 
     const resetTimer = () => {
       clearTimeout(timeoutId);
       timeoutId = setTimeout(() => {
         logout();
-      }, 120000);
+      }, 600000);
     };
 
     // Events to track activity
