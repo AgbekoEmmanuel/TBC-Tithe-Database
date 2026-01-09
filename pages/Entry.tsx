@@ -214,9 +214,9 @@ export const Entry: React.FC = () => {
   }, [undoLastTransaction]);
 
   return (
-    <div className="h-full flex flex-col lg:flex-row gap-4 md:gap-6 animate-fade-in pb-4 md:pb-20 overflow-x-hidden w-full px-4 md:px-0">
+    <div className="h-full flex flex-col lg:flex-row gap-4 md:gap-6 animate-fade-in pb-4 md:pb-20 overflow-x-hidden w-full md:px-0">
       {/* Left Panel - Entry Form */}
-      <div className="w-full lg:w-5/12 flex flex-col h-full glass-panel p-2 md:p-6 relative border-gray-200 overflow-hidden">
+      <div className="w-[90%] md:w-full lg:w-5/12 flex flex-col h-full glass-panel p-2 md:p-6 relative border-gray-200 overflow-hidden mx-auto lg:mx-0">
         {!isSessionActive ? (
           // SESSION SETUP VIEW
           <div className="flex flex-col h-full justify-start pt-2 md:justify-center md:pt-0 animate-fade-in w-full">
@@ -228,7 +228,7 @@ export const Entry: React.FC = () => {
               <p className="text-slate-500 font-medium text-[10px] md:text-sm">Select the period for these transactions</p>
             </div>
 
-            <div className="space-y-2 md:space-y-4 mx-auto w-full md:max-w-sm px-1">
+            <div className="space-y-2 md:space-y-4 max-w-sm mx-auto w-full px-1">
               {/* Year */}
               <div>
                 <label className="block text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Fiscal Year</label>
