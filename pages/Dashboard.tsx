@@ -97,7 +97,7 @@ export const Dashboard: React.FC = () => {
         color: getFellowshipColorHex(name)
       }))
       .sort((a, b) => b.value - a.value)
-      .slice(0, 5); // Return top 5
+      .slice(0, 3); // Return top 3
   };
 
   const TimeFilter = ({
