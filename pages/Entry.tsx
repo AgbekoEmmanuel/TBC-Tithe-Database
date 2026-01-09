@@ -246,12 +246,12 @@ export const Entry: React.FC = () => {
               {/* Month */}
               <div>
                 <label className="block text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 md:mb-1.5">Month</label>
-                <div className="grid grid-cols-3 md:grid-cols-4 gap-1 md:gap-1.5">
+                <div className="grid grid-cols-4 md:grid-cols-4 gap-0.5 md:gap-1.5 max-w-[75%] mx-auto md:max-w-full">
                   {['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'].map((m) => (
                     <button
                       key={m}
                       onClick={() => setSessionMonth(m)}
-                      className={`py-1 md:py-1.5 px-0.5 rounded-lg text-[9px] md:text-[11px] font-bold transition-all ${sessionMonth === m
+                      className={`py-1 md:py-1.5 rounded-md text-[8px] md:text-[11px] font-bold transition-all ${sessionMonth === m
                         ? 'bg-indigo-600 text-white shadow-md'
                         : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
                         }`}
