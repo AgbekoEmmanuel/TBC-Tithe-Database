@@ -86,78 +86,78 @@ const App: React.FC = () => {
   };
 
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
+    <>
+      <Routes>
+        <Route path="/login" element={<Login />} />
 
-      <Route path="/" element={<Layout />}>
-        <Route index element={<Navigate to="/dashboard" replace />} />
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Navigate to="/dashboard" replace />} />
 
-        <Route path="dashboard" element={
-          <RequireAuth>
-            <Dashboard />
-          </RequireAuth>
-        } />
+          <Route path="dashboard" element={
+            <RequireAuth>
+              <Dashboard />
+            </RequireAuth>
+          } />
 
-        <Route path="operations/entry" element={
-          <RequireAuth>
-            <Entry />
-          </RequireAuth>
-        } />
+          <Route path="operations/entry" element={
+            <RequireAuth>
+              <Entry />
+            </RequireAuth>
+          } />
 
-        <Route path="operations/reconcile" element={
-          <RequireAuth allowedRoles={[Role.SUPERVISOR]}>
-            <Reconcile />
-          </RequireAuth>
-        } />
+          <Route path="operations/reconcile" element={
+            <RequireAuth allowedRoles={[Role.SUPERVISOR]}>
+              <Reconcile />
+            </RequireAuth>
+          } />
 
-        <Route path="directory" element={
-          <RequireAuth>
-            <Directory />
-          </RequireAuth>
-        } />
+          <Route path="directory" element={
+            <RequireAuth>
+              <Directory />
+            </RequireAuth>
+          } />
 
-        <Route path="analytics" element={
-          <RequireAuth>
-            <Analytics />
-          </RequireAuth>
-        } />
+          <Route path="analytics" element={
+            <RequireAuth>
+              <Analytics />
+            </RequireAuth>
+          } />
 
-        <Route path="admin" element={
-          <RequireAuth>
-            <Admin />
-          </RequireAuth>
-        } />
-      </Route>
-    </Routes>
+          <Route path="admin" element={
+            <RequireAuth>
+              <Admin />
+            </RequireAuth>
+          } />
+        </Route>
+      </Routes>
 
-    {/* Inactivity Warning Modal */ }
-  {
-    isIdleWarningOpen && (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in p-4">
-        <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1.5 bg-indigo-600 animate-[loading_60s_linear_forwards]"></div>
-          <h3 className="text-xl font-black text-slate-800 mb-2">Are you still there?</h3>
-          <p className="text-slate-500 font-medium text-sm mb-6">
-            For security, your session will time out in less than a minute due to inactivity.
-          </p>
-          <div className="flex gap-3">
-            <button
-              onClick={() => logout()}
-              className="flex-1 py-3 text-slate-500 font-bold bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors"
-            >
-              Logout Now
-            </button>
-            <button
-              onClick={handleStayLoggedIn}
-              className="flex-1 py-3 text-white font-bold bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-[0.98]"
-            >
-              Stay Logged In
-            </button>
+      {/* Inactivity Warning Modal */}
+      {isIdleWarningOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in p-4">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-indigo-600 animate-[loading_60s_linear_forwards]"></div>
+            <h3 className="text-xl font-black text-slate-800 mb-2">Are you still there?</h3>
+            <p className="text-slate-500 font-medium text-sm mb-6">
+              For security, your session will time out in less than a minute due to inactivity.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => logout()}
+                className="flex-1 py-3 text-slate-500 font-bold bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors"
+              >
+                Logout Now
+              </button>
+              <button
+                onClick={handleStayLoggedIn}
+                className="flex-1 py-3 text-white font-bold bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-[0.98]"
+              >
+                Stay Logged In
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    )
-  }
+      )}
+    </>
   );
 };
 
