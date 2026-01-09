@@ -519,9 +519,9 @@ export const Entry: React.FC = () => {
       <div className="w-full lg:w-7/12 flex flex-col h-full">
         {/* Stats Strip */}
         <div className="glass-card mb-4 md:mb-6 p-1 flex justify-between items-center pr-2">
-          <div className="flex-1 px-4 md:px-6 py-2 md:py-4">
-            <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-0.5 md:mb-1">Session Total</p>
-            <p className="text-xl md:text-4xl font-black text-slate-800 tracking-tight">
+          <div className="flex-1 px-4 md:px-4 py-2 md:py-2">
+            <p className="text-slate-400 text-[10px] md:text-[10px] font-bold uppercase tracking-wider mb-0.5 md:mb-0.5">Session Total</p>
+            <p className="text-xl md:text-2xl font-black text-slate-800 tracking-tight">
               GH₵{transactions.reduce((acc, t) => acc + t.amount, 0).toLocaleString()}
             </p>
           </div>
@@ -529,7 +529,7 @@ export const Entry: React.FC = () => {
             <div className="relative" ref={filterWrapperRef}>
               <button
                 onClick={handleOpenFilter}
-                className={`flex items-center space-x-2 px-3 md:px-4 py-2 md:py-3 rounded-xl font-bold transition-all shadow-sm border ${isFilterOpen || appliedFilters.method !== 'ALL' || appliedFilters.fellowship !== 'ALL' || appliedFilters.min || appliedFilters.max || appliedFilters.startDate || appliedFilters.endDate
+                className={`flex items-center space-x-2 px-3 md:px-3 py-2 md:py-2 rounded-xl font-bold transition-all shadow-sm border ${isFilterOpen || appliedFilters.method !== 'ALL' || appliedFilters.fellowship !== 'ALL' || appliedFilters.min || appliedFilters.max || appliedFilters.startDate || appliedFilters.endDate
                   ? 'bg-indigo-600 text-white border-indigo-500 shadow-indigo-200'
                   : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                   }`}
@@ -654,7 +654,7 @@ export const Entry: React.FC = () => {
 
         {/* List */}
         <div className="glass-card flex-1 overflow-hidden flex flex-col border-white/40">
-          <div className="p-3 md:p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/30 backdrop-blur-sm">
+          <div className="p-3 md:p-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/30 backdrop-blur-sm">
             <h3 className="font-bold text-slate-700 text-sm md:text-lg">Recent Transactions</h3>
             <span className="text-[10px] md:text-xs font-bold bg-indigo-100 text-indigo-700 px-2 md:px-3 py-1 md:py-1.5 rounded-lg border border-indigo-200 shadow-sm">
               {transactions.length} Records
@@ -664,32 +664,32 @@ export const Entry: React.FC = () => {
             <table className="w-full border-separate border-spacing-y-1">
               <thead className="sticky top-0 z-10">
                 <tr className="text-left text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider">
-                  <th className="px-3 md:px-6 py-2 md:py-4 bg-white/80 backdrop-blur rounded-l-xl">Date</th>
-                  <th className="px-3 md:px-6 py-2 md:py-4 bg-white/80 backdrop-blur">Member</th>
-                  <th className="px-3 md:px-6 py-2 md:py-4 bg-white/80 backdrop-blur">Method</th>
-                  <th className="px-3 md:px-6 py-2 md:py-4 text-right bg-white/80 backdrop-blur">Amount</th>
-                  <th className="px-2 md:px-4 py-2 md:py-4 w-10 bg-white/80 backdrop-blur rounded-r-xl"></th>
+                  <th className="px-3 md:px-4 py-2 md:py-2 bg-white/80 backdrop-blur rounded-l-xl">Date</th>
+                  <th className="px-3 md:px-4 py-2 md:py-2 bg-white/80 backdrop-blur">Member</th>
+                  <th className="px-3 md:px-4 py-2 md:py-2 bg-white/80 backdrop-blur">Method</th>
+                  <th className="px-3 md:px-4 py-2 md:py-2 text-right bg-white/80 backdrop-blur">Amount</th>
+                  <th className="px-2 md:px-4 py-2 md:py-2 w-10 bg-white/80 backdrop-blur rounded-r-xl"></th>
                 </tr>
               </thead>
               <tbody>
                 {currentTransactions.map((txn) => (
                   <tr key={txn.id} className="hover:bg-white/60 transition-colors group">
-                    <td className="px-3 md:px-6 py-2 md:py-3 text-slate-500 font-mono text-[10px] md:text-sm font-medium rounded-l-xl border-l-4 border-transparent hover:border-indigo-400">
+                    <td className="px-3 md:px-4 py-2 md:py-2 text-slate-500 font-mono text-[10px] md:text-xs font-medium rounded-l-xl border-l-4 border-transparent hover:border-indigo-400">
                       {new Date(txn.timestamp).toLocaleDateString()}
                     </td>
-                    <td className="px-3 md:px-6 py-2 md:py-3">
-                      <div className="font-bold text-slate-700 text-xs md:text-base">{txn.memberName}</div>
-                      <div className="text-[10px] md:text-xs text-slate-400 font-medium">{txn.fellowship}</div>
+                    <td className="px-3 md:px-4 py-2 md:py-2">
+                      <div className="font-bold text-slate-700 text-xs md:text-sm">{txn.memberName}</div>
+                      <div className="text-[10px] md:text-[10px] text-slate-400 font-medium">{txn.fellowship}</div>
                     </td>
-                    <td className="px-3 md:px-6 py-2 md:py-3">
-                      <span className={`text-[10px] md:text-xs font-bold px-1.5 md:px-2.5 py-0.5 md:py-1 rounded-md border ${txn.method === PaymentMethod.CASH ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                    <td className="px-3 md:px-4 py-2 md:py-2">
+                      <span className={`text-[10px] md:text-[10px] font-bold px-1.5 md:px-2 py-0.5 md:py-0.5 rounded-md border ${txn.method === PaymentMethod.CASH ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                         txn.method === PaymentMethod.MOMO ? 'bg-amber-50 text-amber-600 border-amber-100' :
                           'bg-blue-50 text-blue-600 border-blue-100'
                         }`}>
                         {txn.method}
                       </span>
                     </td>
-                    <td className="px-3 md:px-6 py-2 md:py-3 text-right font-bold text-slate-800 text-sm md:text-lg">
+                    <td className="px-3 md:px-4 py-2 md:py-2 text-right font-bold text-slate-800 text-sm md:text-sm">
                       GH₵{txn.amount.toLocaleString()}
                     </td>
                     <td className="px-2 md:px-4 py-2 md:py-3 rounded-r-xl text-center">
