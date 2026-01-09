@@ -214,9 +214,9 @@ export const Entry: React.FC = () => {
   }, [undoLastTransaction]);
 
   return (
-    <div className="h-full flex flex-col lg:flex-row gap-4 md:gap-6 animate-fade-in pb-4 md:pb-20 w-full overflow-hidden">
+    <div className="h-full flex flex-col lg:flex-row gap-4 md:gap-6 animate-fade-in pb-4 md:pb-20 w-full overflow-hidden px-3 md:px-0">
       {/* Left Panel - Entry Form */}
-      <div className="w-[90%] md:w-full lg:w-5/12 flex flex-col h-full glass-panel p-3 md:p-6 relative border-gray-200 overflow-hidden mx-auto lg:mx-0 max-w-full">
+      <div className="w-full lg:w-5/12 flex flex-col h-full glass-panel p-3 md:p-6 relative border-gray-200 overflow-hidden mx-auto lg:mx-0 max-w-full">
         {!isSessionActive ? (
           // SESSION SETUP VIEW
           <div className="flex flex-col h-full justify-start pt-2 md:justify-center md:pt-0 animate-fade-in w-full">
