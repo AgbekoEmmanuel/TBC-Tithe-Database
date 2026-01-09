@@ -654,45 +654,45 @@ export const Entry: React.FC = () => {
 
         {/* List */}
         <div className="glass-card flex-1 overflow-hidden flex flex-col border-white/40">
-          <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/30 backdrop-blur-sm">
-            <h3 className="font-bold text-slate-700 text-lg">Recent Transactions</h3>
-            <span className="text-xs font-bold bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg border border-indigo-200 shadow-sm">
+          <div className="p-3 md:p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/30 backdrop-blur-sm">
+            <h3 className="font-bold text-slate-700 text-sm md:text-lg">Recent Transactions</h3>
+            <span className="text-[10px] md:text-xs font-bold bg-indigo-100 text-indigo-700 px-2 md:px-3 py-1 md:py-1.5 rounded-lg border border-indigo-200 shadow-sm">
               {transactions.length} Records
             </span>
           </div>
-          <div className="overflow-y-auto flex-1 p-2">
+          <div className="overflow-y-auto flex-1 p-1 md:p-2">
             <table className="w-full border-separate border-spacing-y-1">
               <thead className="sticky top-0 z-10">
-                <tr className="text-left text-xs font-bold text-slate-400 uppercase tracking-wider">
-                  <th className="px-6 py-4 bg-white/80 backdrop-blur rounded-l-xl">Date</th>
-                  <th className="px-6 py-4 bg-white/80 backdrop-blur">Member</th>
-                  <th className="px-6 py-4 bg-white/80 backdrop-blur">Method</th>
-                  <th className="px-6 py-4 text-right bg-white/80 backdrop-blur">Amount</th>
-                  <th className="px-4 py-4 w-10 bg-white/80 backdrop-blur rounded-r-xl"></th>
+                <tr className="text-left text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  <th className="px-3 md:px-6 py-2 md:py-4 bg-white/80 backdrop-blur rounded-l-xl">Date</th>
+                  <th className="px-3 md:px-6 py-2 md:py-4 bg-white/80 backdrop-blur">Member</th>
+                  <th className="px-3 md:px-6 py-2 md:py-4 bg-white/80 backdrop-blur">Method</th>
+                  <th className="px-3 md:px-6 py-2 md:py-4 text-right bg-white/80 backdrop-blur">Amount</th>
+                  <th className="px-2 md:px-4 py-2 md:py-4 w-10 bg-white/80 backdrop-blur rounded-r-xl"></th>
                 </tr>
               </thead>
               <tbody>
                 {currentTransactions.map((txn) => (
                   <tr key={txn.id} className="hover:bg-white/60 transition-colors group">
-                    <td className="px-6 py-4 text-slate-500 font-mono text-sm font-medium rounded-l-xl border-l-4 border-transparent hover:border-indigo-400">
+                    <td className="px-3 md:px-6 py-2 md:py-3 text-slate-500 font-mono text-[10px] md:text-sm font-medium rounded-l-xl border-l-4 border-transparent hover:border-indigo-400">
                       {new Date(txn.timestamp).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="font-bold text-slate-700">{txn.memberName}</div>
-                      <div className="text-xs text-slate-400 font-medium">{txn.fellowship}</div>
+                    <td className="px-3 md:px-6 py-2 md:py-3">
+                      <div className="font-bold text-slate-700 text-xs md:text-base">{txn.memberName}</div>
+                      <div className="text-[10px] md:text-xs text-slate-400 font-medium">{txn.fellowship}</div>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`text-xs font-bold px-2.5 py-1 rounded-md border ${txn.method === PaymentMethod.CASH ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                    <td className="px-3 md:px-6 py-2 md:py-3">
+                      <span className={`text-[10px] md:text-xs font-bold px-1.5 md:px-2.5 py-0.5 md:py-1 rounded-md border ${txn.method === PaymentMethod.CASH ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                         txn.method === PaymentMethod.MOMO ? 'bg-amber-50 text-amber-600 border-amber-100' :
                           'bg-blue-50 text-blue-600 border-blue-100'
                         }`}>
                         {txn.method}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right font-bold text-slate-800 text-lg">
+                    <td className="px-3 md:px-6 py-2 md:py-3 text-right font-bold text-slate-800 text-sm md:text-lg">
                       GH₵{txn.amount.toLocaleString()}
                     </td>
-                    <td className="px-4 py-4 rounded-r-xl text-center">
+                    <td className="px-2 md:px-4 py-2 md:py-3 rounded-r-xl text-center">
                       <button
                         onClick={() => {
                           if (window.confirm('Are you sure you want to delete this transaction?')) {
