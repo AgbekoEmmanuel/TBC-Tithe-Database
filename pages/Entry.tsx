@@ -265,12 +265,12 @@ export const Entry: React.FC = () => {
               {/* Week */}
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Week Number</label>
-                <div className="flex bg-slate-100 p-1 rounded-xl">
+                <div className="grid grid-cols-5 gap-1 bg-slate-100 p-1 rounded-xl">
                   {[1, 2, 3, 4, 5].map((w) => (
                     <button
                       key={w}
                       onClick={() => setSessionWeek(w)}
-                      className={`flex-1 py-2 md:py-2.5 rounded-lg text-xs md:text-sm font-bold transition-all ${sessionWeek === w
+                      className={`py-2 md:py-2.5 rounded-lg text-xs md:text-sm font-bold transition-all ${sessionWeek === w
                         ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5'
                         : 'text-slate-400 hover:text-slate-600'
                         }`}
