@@ -122,7 +122,7 @@ export const Layout: React.FC = () => {
       </div>
 
       {/* Mobile Top Navbar (Apple Style) */}
-      <div className="md:hidden fixed top-0 left-0 w-full bg-white z-50 h-14 border-b border-gray-100 flex items-center justify-between px-4 transition-all duration-300">
+      <div className="md:hidden fixed top-0 left-0 w-screen bg-white z-[100] h-14 border-b border-gray-100 flex items-center justify-between px-4 transition-all duration-300 shadow-sm">
         {/* Left: Logo */}
         <div className="flex items-center">
           <img src={tbcLogo} alt="Logo" className="h-8 w-auto object-contain" />
