@@ -283,9 +283,9 @@ export const Entry: React.FC = () => {
 
               <button
                 onClick={() => setIsSessionActive(true)}
-                className="w-full bg-indigo-600 text-white font-bold py-3 md:py-5 rounded-xl md:rounded-2xl text-sm md:text-lg hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 flex items-center justify-center mt-5 md:mt-8 active:scale-[0.98]"
+                className="w-full bg-indigo-600 text-white font-bold py-2.5 md:py-3.5 rounded-lg md:rounded-xl text-xs md:text-base hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 flex items-center justify-center mt-4 md:mt-6 active:scale-[0.98]"
               >
-                <Play className="w-4 h-4 md:w-5 md:h-5 mr-2 md:mr-3 fill-current" />
+                <Play className="w-4 h-4 mr-2 fill-current" />
                 Start Session
               </button>
             </div>
