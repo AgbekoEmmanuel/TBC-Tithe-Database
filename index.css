@@ -28,9 +28,15 @@ body {
 }
 
 @media (max-width: 768px) {
+  body {
+    overflow-y: auto;
+  }
+
   .floating-container {
     border-radius: 0;
     box-shadow: none;
+    height: auto;
+    overflow: visible;
   }
 }
 
