@@ -1,20 +1,47 @@
 import React, { useState, useRef } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store';
 import { Sidebar } from './Sidebar';
 import pheebsProfile from '../src/images/pheebs.jpg';
 import serwaaProfile from '../src/images/serwaacrop.jpg';
+import tbcLogo from '../src/images/tbc logo crop.png';
 import { supabase } from '../lib/supabaseClient';
-import { Loader, Camera, X, User, Mail, Shield } from 'lucide-react';
+import {
+  Loader,
+  Camera,
+  X,
+  User,
+  Mail,
+  Shield,
+  Menu,
+  Search,
+  LogOut,
+  ChevronRight,
+  LayoutDashboard,
+  PlusCircle,
+  Wallet,
+  Users,
+  PieChart,
+  ShieldCheck
+} from 'lucide-react';
+import { Role } from '../types';
 
 export const Layout: React.FC = () => {
-  const { user, checkAuth } = useAuthStore();
+  const { user, checkAuth, logout } = useAuthStore();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
 
   const handleAvatarClick = () => {
     setIsProfileOpen(true);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+    setIsMobileMenuOpen(false);
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -68,13 +95,113 @@ export const Layout: React.FC = () => {
 
   const avatarSrc = getAvatarSrc();
 
+  // Mobile Nav Item Helper
+  const MobileNavItem = ({ to, icon: Icon, label }: { to: string, icon: any, label: string }) => (
+    <NavLink
+      to={to}
+      onClick={() => setIsMobileMenuOpen(false)}
+      className={({ isActive }) =>
+        `flex items-center justify-between p-4 rounded-xl transition-all ${isActive ? 'bg-indigo-50 text-indigo-600' : 'text-slate-600 hover:bg-slate-50'
+        }`
+      }
+    >
+      <div className="flex items-center space-x-3">
+        <Icon className="w-5 h-5" />
+        <span className="font-semibold text-sm">{label}</span>
+      </div>
+      <ChevronRight className="w-4 h-4 text-slate-300" />
+    </NavLink>
+  );
+
   return (
     <div className="flex h-screen bg-[#1e1e2d]">
-      <Sidebar />
-      <div className="flex-1 p-4 h-screen overflow-hidden ml-14 md:ml-0">
-        <div className="floating-container p-8 animate-fade-in relative z-0">
-          {/* Header Area */}
-          <header className="flex justify-between items-center mb-6 md:mb-10 transition-all">
+
+      {/* Desktop Sidebar */}
+      <div className="hidden md:flex h-full z-50">
+        <Sidebar />
+      </div>
+
+      {/* Mobile Top Navbar (Apple Style) */}
+      <div className="md:hidden fixed top-0 left-0 w-full bg-white/90 backdrop-blur-xl z-50 h-14 border-b border-gray-100 flex items-center justify-between px-4 transition-all duration-300">
+        {/* Left: Logo */}
+        <div className="flex items-center">
+          <img src={tbcLogo} alt="Logo" className="h-8 w-auto object-contain" />
+        </div>
+
+        {/* Right: Icons */}
+        <div className="flex items-center space-x-5 text-gray-700">
+          <div className="p-1 rounded-full active:bg-gray-100 transition-colors">
+            <Search size={22} strokeWidth={1.5} className="text-gray-800" />
+          </div>
+
+          <button
+            onClick={() => setIsProfileOpen(true)}
+            className="w-7 h-7 rounded-full overflow-hidden ring-1 ring-gray-200 active:scale-95 transition-transform"
+          >
+            {avatarSrc ? (
+              <img src={avatarSrc} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold">
+                {user?.name ? user.name.substring(0, 1).toUpperCase() : 'U'}
+              </div>
+            )}
+          </button>
+
+          <div
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="p-1 rounded-full active:bg-gray-100 transition-colors cursor-pointer"
+          >
+            <Menu size={22} strokeWidth={1.5} className="text-gray-800" />
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Menu Dropdown */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 top-14 bg-white z-40 animate-fade-in md:hidden">
+          <div className="p-4 space-y-2 h-[calc(100vh-3.5rem)] overflow-y-auto">
+            <div className="mb-6">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Menu</h3>
+              <div className="space-y-1">
+                <MobileNavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
+                <MobileNavItem to="/operations/entry" icon={PlusCircle} label="New Entry" />
+
+                {user?.role === Role.SUPERVISOR && (
+                  <MobileNavItem to="/operations/reconcile" icon={Wallet} label="Reconcile" />
+                )}
+
+                <MobileNavItem to="/directory" icon={Users} label="Member Directory" />
+                <MobileNavItem to="/analytics" icon={PieChart} label="Analytics" />
+                <MobileNavItem to="/admin" icon={ShieldCheck} label="Admin & Import" />
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-gray-100">
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center justify-between p-4 rounded-xl text-red-500 bg-red-50 hover:bg-red-100 transition-colors"
+              >
+                <div className="flex items-center space-x-3">
+                  <LogOut className="w-5 h-5" />
+                  <span className="font-semibold text-sm">Logout</span>
+                </div>
+              </button>
+            </div>
+
+            <div className="mt-8 text-center text-gray-300 text-[10px]">
+              <p>Churchify Platform v1.2</p>
+              <p>© 2026 TBC Tithing Database</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content Area */}
+      {/* Added pt-14 for mobile to account for fixed navbar */}
+      <div className="flex-1 h-screen overflow-hidden overflow-y-auto bg-[#1e1e2d] pt-14 md:pt-0">
+        <div className="floating-container p-4 md:p-8 animate-fade-in relative z-0 h-full">
+          {/* Header Area - Hidden on Mobile since we have the navbar */}
+          <header className="hidden md:flex justify-between items-center mb-6 md:mb-10 transition-all">
             <div>
               <h1 className="text-xl md:text-3xl font-bold text-[#1e1e2d] whitespace-nowrap">Hi, {user?.name || 'User'}</h1>
             </div>
@@ -106,7 +233,7 @@ export const Layout: React.FC = () => {
             </div>
           </header>
 
-          <main>
+          <main className="h-full pb-20 md:pb-0"> {/* Added padding bottom for mobile scrolling */}
             <Outlet />
           </main>
 
