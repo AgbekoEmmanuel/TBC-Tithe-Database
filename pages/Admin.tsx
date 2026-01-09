@@ -162,7 +162,7 @@ export const Admin: React.FC = () => {
     };
 
     return (
-        <div className="space-y-8 animate-fade-in p-2 md:p-8 pb-32">
+        <div className="space-y-8 animate-fade-in p-2 md:p-8 pb-32 overflow-x-hidden w-full">
             {/* Universal Header */}
             <div className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                 <div>

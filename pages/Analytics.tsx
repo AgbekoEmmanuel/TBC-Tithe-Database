@@ -203,7 +203,7 @@ export const Analytics: React.FC = () => {
   };
 
   return (
-    <div className="animate-fade-in relative">
+    <div className="animate-fade-in relative overflow-x-hidden w-full">
       {/* Report Modal */}
       {isReportModalOpen && createPortal(
         <div

@@ -214,7 +214,7 @@ export const Entry: React.FC = () => {
   }, [undoLastTransaction]);
 
   return (
-    <div className="h-full flex flex-col lg:flex-row gap-4 md:gap-6 animate-fade-in pb-4 md:pb-20">
+    <div className="h-full flex flex-col lg:flex-row gap-4 md:gap-6 animate-fade-in pb-4 md:pb-20 overflow-x-hidden w-full">
       {/* Left Panel - Entry Form */}
       <div className="w-full lg:w-5/12 flex flex-col h-full glass-panel p-4 md:p-8 relative border-gray-200">
         {!isSessionActive ? (
@@ -660,7 +660,7 @@ export const Entry: React.FC = () => {
               {transactions.length} Records
             </span>
           </div>
-          <div className="overflow-x-auto flex-1 p-1 md:p-2 w-full max-w-[calc(100vw-2rem)] md:max-w-full">
+          <div className="overflow-x-auto flex-1 p-1 md:p-2 w-full max-w-[calc(100vw-2.5rem)] md:max-w-full">
             <table className="w-full border-separate border-spacing-y-1">
               <thead className="sticky top-0 z-10">
                 <tr className="text-left text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider">

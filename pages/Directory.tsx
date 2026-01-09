@@ -167,7 +167,7 @@ export const Directory: React.FC = () => {
   };
 
   return (
-    <div className="animate-fade-in relative min-h-screen">
+    <div className="animate-fade-in relative min-h-screen overflow-x-hidden w-full">
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
           <h2 className="text-3xl font-bold text-slate-800 tracking-tight">Member Directory</h2>
@@ -301,7 +301,7 @@ export const Directory: React.FC = () => {
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto w-full max-w-[calc(100vw-2rem)] md:max-w-full">
+        <div className="overflow-x-auto w-full max-w-[calc(100vw-2.5rem)] md:max-w-full">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100">
