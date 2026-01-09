@@ -216,26 +216,26 @@ export const Entry: React.FC = () => {
   return (
     <div className="h-full flex flex-col lg:flex-row gap-4 md:gap-6 animate-fade-in pb-4 md:pb-20 overflow-x-hidden w-full">
       {/* Left Panel - Entry Form */}
-      <div className="w-full lg:w-5/12 flex flex-col h-full glass-panel p-4 md:p-8 relative border-gray-200">
+      <div className="w-full lg:w-5/12 flex flex-col h-full glass-panel p-4 md:p-6 relative border-gray-200">
         {!isSessionActive ? (
           // SESSION SETUP VIEW
           <div className="flex flex-col h-full justify-start pt-2 md:justify-center md:pt-0 animate-fade-in">
-            <div className="mb-3 md:mb-10 text-center">
-              <div className="w-10 h-10 md:w-20 md:h-20 bg-indigo-100 rounded-xl md:rounded-3xl flex items-center justify-center mx-auto mb-2 md:mb-6 text-indigo-600 shadow-inner">
-                <Calendar className="w-5 h-5 md:w-10 md:h-10" />
+            <div className="mb-3 md:mb-6 text-center">
+              <div className="w-10 h-10 md:w-16 md:h-16 bg-indigo-100 rounded-xl md:rounded-3xl flex items-center justify-center mx-auto mb-2 md:mb-4 text-indigo-600 shadow-inner">
+                <Calendar className="w-5 h-5 md:w-8 md:h-8" />
               </div>
-              <h2 className="text-lg md:text-3xl font-black text-slate-800 mb-0.5 md:mb-2">Start a Session</h2>
-              <p className="text-slate-500 font-medium text-[10px] md:text-base">Select the period for these transactions</p>
+              <h2 className="text-lg md:text-2xl font-black text-slate-800 mb-0.5 md:mb-2">Start a Session</h2>
+              <p className="text-slate-500 font-medium text-[10px] md:text-sm">Select the period for these transactions</p>
             </div>
 
-            <div className="space-y-2 md:space-y-6 max-w-sm mx-auto w-full">
+            <div className="space-y-2 md:space-y-4 max-w-sm mx-auto w-full">
               {/* Year */}
               <div>
                 <label className="block text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Fiscal Year</label>
                 <select
                   value={sessionYear}
                   onChange={(e) => setSessionYear(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg md:rounded-xl px-4 py-2 md:py-4 font-bold text-slate-700 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow appearance-none cursor-pointer hover:bg-slate-100"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg md:rounded-xl px-4 py-2 md:py-3 font-bold text-slate-700 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow appearance-none cursor-pointer hover:bg-slate-100"
                 >
                   <option value="2024">2024</option>
                   <option value="2025">2025</option>
@@ -245,13 +245,13 @@ export const Entry: React.FC = () => {
 
               {/* Month */}
               <div>
-                <label className="block text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 md:mb-2">Month</label>
-                <div className="grid grid-cols-4 md:grid-cols-2 gap-1 md:gap-2">
+                <label className="block text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 md:mb-1.5">Month</label>
+                <div className="grid grid-cols-4 md:grid-cols-2 gap-1 md:gap-1.5">
                   {['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'].map((m) => (
                     <button
                       key={m}
                       onClick={() => setSessionMonth(m)}
-                      className={`py-2 md:py-2 px-0.5 rounded-lg text-[9px] md:text-xs font-bold transition-all ${sessionMonth === m
+                      className={`py-1.5 md:py-1.5 px-0.5 rounded-lg text-[9px] md:text-[11px] font-bold transition-all ${sessionMonth === m
                         ? 'bg-indigo-600 text-white shadow-md'
                         : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
                         }`}
@@ -270,7 +270,7 @@ export const Entry: React.FC = () => {
                     <button
                       key={w}
                       onClick={() => setSessionWeek(w)}
-                      className={`flex-1 py-2 md:py-3 rounded-lg text-xs md:text-sm font-bold transition-all ${sessionWeek === w
+                      className={`flex-1 py-2 md:py-2.5 rounded-lg text-xs md:text-sm font-bold transition-all ${sessionWeek === w
                         ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5'
                         : 'text-slate-400 hover:text-slate-600'
                         }`}
@@ -283,7 +283,7 @@ export const Entry: React.FC = () => {
 
               <button
                 onClick={() => setIsSessionActive(true)}
-                className="w-full bg-indigo-600 text-white font-bold py-2.5 md:py-3.5 rounded-lg md:rounded-xl text-xs md:text-base hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 flex items-center justify-center mt-4 md:mt-6 active:scale-[0.98]"
+                className="w-full bg-indigo-600 text-white font-bold py-2 md:py-3 rounded-lg md:rounded-xl text-xs md:text-sm hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 flex items-center justify-center mt-4 md:mt-4 active:scale-[0.98]"
               >
                 <Play className="w-4 h-4 mr-2 fill-current" />
                 Start Session
