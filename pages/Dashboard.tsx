@@ -142,18 +142,18 @@ export const Dashboard: React.FC = () => {
               { label: 'Avg. Tithe', amount: fmt(avgGift), icon: TrendingUp, color: 'text-purple-600', bg: 'bg-purple-50 ring-1 ring-purple-100', shadow: 'shadow-purple-100' },
               { label: 'Top Giver', amount: fmt(highestTither[1]), icon: Crown, color: 'text-amber-600', bg: 'bg-amber-50 ring-1 ring-amber-100', shadow: 'shadow-amber-100' }
             ].map((stat, i) => (
-              <div key={i} className="bg-white rounded-2xl md:rounded-3xl p-3 md:p-6 relative transition-all duration-300 hover:shadow-xl hover:shadow-indigo-900/5 hover:-translate-y-1 border border-slate-100 shadow-sm group overflow-hidden">
-                <div className="flex justify-between items-start mb-2 md:mb-8">
-                  <div className={`w-8 h-8 md:w-14 md:h-14 rounded-lg md:rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 duration-300 ${stat.bg}`}>
-                    <stat.icon className={`w-4 h-4 md:w-7 md:h-7 ${stat.color}`} />
+              <div key={i} className="bg-white rounded-xl md:rounded-3xl p-2 md:p-6 relative transition-all duration-300 hover:shadow-xl hover:shadow-indigo-900/5 hover:-translate-y-1 border border-slate-100 shadow-sm group overflow-hidden">
+                <div className="flex justify-between items-start mb-1.5 md:mb-8">
+                  <div className={`w-7 h-7 md:w-14 md:h-14 rounded-lg md:rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 duration-300 ${stat.bg}`}>
+                    <stat.icon className={`w-3.5 h-3.5 md:w-7 md:h-7 ${stat.color}`} />
                   </div>
                   <button className="text-slate-300 hover:text-slate-500 transition-colors p-1 rounded-full hover:bg-slate-50 hidden md:block">
                     <MoreHorizontal className="w-5 h-5" />
                   </button>
                 </div>
                 <div>
-                  <h3 className="text-sm md:text-2xl font-black text-slate-800 tracking-tight mb-0.5 md:mb-1 truncate">{stat.amount}</h3>
-                  <p className="text-slate-500 font-bold text-[10px] md:text-sm uppercase tracking-wider opacity-80 truncate">{stat.label}</p>
+                  <h3 className="text-[11px] md:text-2xl font-black text-slate-800 tracking-tight mb-0.5 md:mb-1">{stat.amount}</h3>
+                  <p className="text-slate-500 font-bold text-[9px] md:text-sm uppercase tracking-wider opacity-80 leading-tight">{stat.label}</p>
                 </div>
                 {/* Decorative background element */}
                 <div className={`absolute top-0 right-0 w-16 h-16 md:w-32 md:h-32 bg-gradient-to-br from-white to-transparent opacity-50 rounded-full blur-2xl md:blur-3xl -z-10 ${stat.shadow}`}></div>
