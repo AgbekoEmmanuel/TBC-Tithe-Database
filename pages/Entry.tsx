@@ -214,9 +214,9 @@ export const Entry: React.FC = () => {
   }, [undoLastTransaction]);
 
   return (
-    <div className="h-full flex flex-col lg:flex-row gap-4 md:gap-6 animate-fade-in pb-4 md:pb-20 overflow-x-hidden w-full md:px-0">
+    <div className="h-full flex flex-col lg:flex-row gap-4 md:gap-6 animate-fade-in pb-4 md:pb-20 w-full overflow-hidden">
       {/* Left Panel - Entry Form */}
-      <div className="w-[85%] md:w-full lg:w-5/12 flex flex-col h-full glass-panel p-1.5 md:p-6 relative border-gray-200 overflow-hidden mx-auto lg:mx-0">
+      <div className="w-full lg:w-5/12 flex flex-col h-full glass-panel p-2 md:p-6 relative border-gray-200 overflow-hidden max-w-full">
         {!isSessionActive ? (
           // SESSION SETUP VIEW
           <div className="flex flex-col h-full justify-start pt-2 md:justify-center md:pt-0 animate-fade-in w-full">
@@ -228,7 +228,7 @@ export const Entry: React.FC = () => {
               <p className="text-slate-500 font-medium text-[10px] md:text-sm">Select the period for these transactions</p>
             </div>
 
-            <div className="space-y-2 md:space-y-4 w-full px-0">
+            <div className="space-y-2 md:space-y-4 w-full px-1 max-w-full">
               {/* Year */}
               <div>
                 <label className="block text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Fiscal Year</label>
@@ -246,7 +246,7 @@ export const Entry: React.FC = () => {
               {/* Month */}
               <div>
                 <label className="block text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 md:mb-1.5">Month</label>
-                <div className="grid grid-cols-3 md:grid-cols-2 gap-1 md:gap-1.5">
+                <div className="grid grid-cols-3 md:grid-cols-4 gap-1 md:gap-1.5">
                   {['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'].map((m) => (
                     <button
                       key={m}
@@ -265,12 +265,12 @@ export const Entry: React.FC = () => {
               {/* Week */}
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Week Number</label>
-                <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
+                <div className="flex bg-slate-100 p-0.5 rounded-xl w-full">
                   {[1, 2, 3, 4, 5].map((w) => (
                     <button
                       key={w}
                       onClick={() => setSessionWeek(w)}
-                      className={`flex-1 py-1.5 md:py-2.5 rounded-lg text-xs md:text-sm font-bold transition-all min-w-0 ${sessionWeek === w
+                      className={`flex-1 py-1.5 md:py-2.5 rounded-lg text-[10px] md:text-sm font-bold transition-all ${sessionWeek === w
                         ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5'
                         : 'text-slate-400 hover:text-slate-600'
                         }`}
