@@ -216,7 +216,7 @@ export const Entry: React.FC = () => {
   return (
     <div className="h-full flex flex-col lg:flex-row gap-4 md:gap-6 animate-fade-in pb-4 md:pb-20 w-full overflow-hidden">
       {/* Left Panel - Entry Form */}
-      <div className="w-full lg:w-5/12 flex flex-col h-full glass-panel p-2 md:p-6 relative border-gray-200 overflow-hidden max-w-full">
+      <div className="w-[90%] md:w-full lg:w-5/12 flex flex-col h-full glass-panel p-3 md:p-6 relative border-gray-200 overflow-hidden mx-auto lg:mx-0 max-w-full">
         {!isSessionActive ? (
           // SESSION SETUP VIEW
           <div className="flex flex-col h-full justify-start pt-2 md:justify-center md:pt-0 animate-fade-in w-full">
@@ -228,30 +228,32 @@ export const Entry: React.FC = () => {
               <p className="text-slate-500 font-medium text-[10px] md:text-sm">Select the period for these transactions</p>
             </div>
 
-            <div className="space-y-2 md:space-y-4 w-full px-1 max-w-full">
-              {/* Year */}
-              <div>
-                <label className="block text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Fiscal Year</label>
-                <select
-                  value={sessionYear}
-                  onChange={(e) => setSessionYear(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg md:rounded-xl px-4 py-2 md:py-3 font-bold text-slate-700 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow appearance-none cursor-pointer hover:bg-slate-100"
-                >
-                  <option value="2024">2024</option>
-                  <option value="2025">2025</option>
-                  <option value="2026">2026</option>
-                </select>
+            <div className="space-y-3 md:space-y-4 w-full px-1 max-w-full">
+              {/* Fiscal Year - Flex Row */}
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm md:text-base font-bold text-slate-700 whitespace-nowrap mr-3">Fiscal Year</label>
+                <div className="flex-1 relative">
+                  <select
+                    value={sessionYear}
+                    onChange={(e) => setSessionYear(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-1.5 px-3 font-bold text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow cursor-pointer hover:bg-slate-100"
+                  >
+                    <option value="2024">2024</option>
+                    <option value="2025">2025</option>
+                    <option value="2026">2026</option>
+                  </select>
+                </div>
               </div>
 
-              {/* Month */}
+              {/* Month - 4 Column Grid (Left Aligned) */}
               <div>
-                <label className="block text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 md:mb-1.5">Month</label>
-                <div className="grid grid-cols-4 md:grid-cols-4 gap-0.5 md:gap-1.5 max-w-[75%] mx-auto md:max-w-full">
+                <label className="block text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 text-left">Month</label>
+                <div className="grid grid-cols-4 gap-1.5 w-full">
                   {['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'].map((m) => (
                     <button
                       key={m}
                       onClick={() => setSessionMonth(m)}
-                      className={`py-1 md:py-1.5 rounded-md text-[8px] md:text-[11px] font-bold transition-all ${sessionMonth === m
+                      className={`py-1.5 rounded-lg text-[10px] md:text-[11px] font-bold transition-all flex items-center justify-center ${sessionMonth === m
                         ? 'bg-indigo-600 text-white shadow-md'
                         : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
                         }`}
@@ -262,15 +264,15 @@ export const Entry: React.FC = () => {
                 </div>
               </div>
 
-              {/* Week */}
+              {/* Week - 5 Column Grid (Left Aligned) */}
               <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Week Number</label>
-                <div className="flex bg-slate-100 p-0.5 rounded-xl w-full">
+                <label className="block text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 text-left">Week Number</label>
+                <div className="grid grid-cols-5 gap-1 w-full bg-slate-100 p-1 rounded-xl">
                   {[1, 2, 3, 4, 5].map((w) => (
                     <button
                       key={w}
                       onClick={() => setSessionWeek(w)}
-                      className={`flex-1 py-1.5 md:py-2.5 rounded-lg text-[10px] md:text-sm font-bold transition-all ${sessionWeek === w
+                      className={`py-1.5 rounded-lg text-[10px] md:text-sm font-bold transition-all flex items-center justify-center ${sessionWeek === w
                         ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5'
                         : 'text-slate-400 hover:text-slate-600'
                         }`}
@@ -281,9 +283,10 @@ export const Entry: React.FC = () => {
                 </div>
               </div>
 
+              {/* Start Button */}
               <button
                 onClick={() => setIsSessionActive(true)}
-                className="w-full bg-indigo-600 text-white font-bold py-2 md:py-3 rounded-lg md:rounded-xl text-xs md:text-sm hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 flex items-center justify-center mt-4 md:mt-4 active:scale-[0.98]"
+                className="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl text-sm hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 flex items-center justify-center mt-3 active:scale-[0.98]"
               >
                 <Play className="w-4 h-4 mr-2 fill-current" />
                 Start Session
