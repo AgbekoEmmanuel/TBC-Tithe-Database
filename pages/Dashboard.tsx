@@ -170,7 +170,7 @@ export const Dashboard: React.FC = () => {
               </div>
             </div>
 
-            <div className="glass-panel p-2 overflow-x-auto">
+            <div className="glass-panel p-2 overflow-x-auto w-full max-w-[calc(100vw-2.5rem)] md:max-w-full">
               <table className="w-full min-w-[700px]">
                 <thead>
                   <tr className="text-left text-xs font-semibold text-gray-400 border-b border-gray-100">
