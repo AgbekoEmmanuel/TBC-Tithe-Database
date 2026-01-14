@@ -214,9 +214,9 @@ export const Entry: React.FC = () => {
   }, [undoLastTransaction]);
 
   return (
-    <div className="h-full flex flex-col lg:flex-row gap-4 md:gap-6 animate-fade-in pb-4 md:pb-20 w-full overflow-hidden px-3 md:px-0">
+    <div className="h-full flex flex-col lg:flex-row gap-4 md:gap-6 animate-fade-in pb-4 md:pb-20 w-full max-w-full overflow-x-hidden px-4 md:px-0 box-border max-h-[calc(100vh-180px)] overflow-y-auto pb-[120px]">
       {/* Left Panel - Entry Form */}
-      <div className="w-full lg:w-5/12 flex flex-col h-full glass-panel p-3 md:p-6 relative border-gray-200 overflow-hidden mx-auto lg:mx-0 max-w-full">
+      <div className="w-full lg:w-5/12 flex flex-col h-full bg-white rounded-3xl p-4 md:p-6 relative border-gray-200 overflow-hidden mx-auto lg:mx-0 max-w-full shadow-sm">
         {!isSessionActive ? (
           // SESSION SETUP VIEW
           <div className="flex flex-col h-full justify-start pt-2 md:justify-center md:pt-0 animate-fade-in w-full">
@@ -245,15 +245,15 @@ export const Entry: React.FC = () => {
                 </div>
               </div>
 
-              {/* Month - 4 Column Grid (Left Aligned) */}
+              {/* Month - 3 Column Grid */}
               <div>
                 <label className="block text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 text-left">Month</label>
-                <div className="grid grid-cols-4 gap-1.5 w-full">
+                <div className="grid grid-cols-3 gap-2 w-full mb-6">
                   {['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'].map((m) => (
                     <button
                       key={m}
                       onClick={() => setSessionMonth(m)}
-                      className={`py-1.5 rounded-lg text-[10px] md:text-[11px] font-bold transition-all flex items-center justify-center ${sessionMonth === m
+                      className={`w-full min-w-0 px-3 py-3 rounded-2xl text-sm max-sm:text-xs max-sm:py-2 max-sm:px-1 font-bold transition-all flex items-center justify-center truncate ${sessionMonth === m
                         ? 'bg-indigo-600 text-white shadow-md'
                         : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
                         }`}
@@ -264,17 +264,17 @@ export const Entry: React.FC = () => {
                 </div>
               </div>
 
-              {/* Week - 5 Column Grid (Left Aligned) */}
+              {/* Week - 3 Column Grid */}
               <div>
                 <label className="block text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 text-left">Week Number</label>
-                <div className="grid grid-cols-5 gap-1 w-full bg-slate-100 p-1 rounded-xl">
-                  {[1, 2, 3, 4, 5].map((w) => (
+                <div className="grid grid-cols-3 gap-2 w-full mb-6">
+                  {[1, 2, 3, 4].map((w) => (
                     <button
                       key={w}
                       onClick={() => setSessionWeek(w)}
-                      className={`py-1.5 rounded-lg text-[10px] md:text-sm font-bold transition-all flex items-center justify-center ${sessionWeek === w
-                        ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5'
-                        : 'text-slate-400 hover:text-slate-600'
+                      className={`w-full min-w-0 px-3 py-3 rounded-2xl text-sm max-sm:text-xs max-sm:py-2 max-sm:px-1 font-bold transition-all flex items-center justify-center ${sessionWeek === w
+                        ? 'bg-indigo-600 text-white shadow-md'
+                        : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
                         }`}
                     >
                       {w}
@@ -286,7 +286,7 @@ export const Entry: React.FC = () => {
               {/* Start Button */}
               <button
                 onClick={() => setIsSessionActive(true)}
-                className="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl text-sm hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 flex items-center justify-center mt-3 active:scale-[0.98]"
+                className="w-full py-4 rounded-2xl bg-indigo-600 text-white font-bold relative mb-12 hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 flex items-center justify-center active:scale-[0.98] text-base"
               >
                 <Play className="w-4 h-4 mr-2 fill-current" />
                 Start Session
@@ -524,7 +524,7 @@ export const Entry: React.FC = () => {
         <div className="glass-card mb-4 md:mb-6 p-1 flex justify-between items-center pr-2">
           <div className="flex-1 px-4 md:px-4 py-2 md:py-2">
             <p className="text-slate-400 text-[10px] md:text-[10px] font-bold uppercase tracking-wider mb-0.5 md:mb-0.5">Session Total</p>
-            <p className="text-xl md:text-2xl font-black text-slate-800 tracking-tight">
+            <p className="text-2xl font-black text-slate-800 tracking-tight">
               GH₵{transactions.reduce((acc, t) => acc + t.amount, 0).toLocaleString()}
             </p>
           </div>
@@ -663,7 +663,7 @@ export const Entry: React.FC = () => {
               {transactions.length} Records
             </span>
           </div>
-          <div className="overflow-x-auto flex-1 p-1 md:p-2 w-full max-w-[calc(100vw-2.5rem)] md:max-w-full">
+          <div className="w-full overflow-x-auto flex-1 p-1 md:p-2">
             <table className="w-full border-separate border-spacing-y-1">
               <thead className="sticky top-0 z-10">
                 <tr className="text-left text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider">

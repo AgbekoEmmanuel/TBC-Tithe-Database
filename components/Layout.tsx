@@ -200,7 +200,7 @@ export const Layout: React.FC = () => {
       {/* Added pt-14 for mobile to account for fixed navbar */}
       {/* Mobile: Use body scroll (min-h-screen). Desktop: Use container scroll (h-screen overflow-y-auto) */}
       <div className="flex-1 min-h-screen md:h-screen md:overflow-hidden md:overflow-y-auto bg-[#1e1e2d] pt-14 md:pt-0 transition-all">
-        <div className="floating-container p-4 md:p-8 animate-fade-in relative z-0 h-full overflow-x-hidden">
+        <div className="floating-container p-4 md:p-8 animate-fade-in relative z-0 h-auto md:h-full overflow-x-hidden">
           {/* Header Area - Hidden on Mobile since we have the navbar */}
           <header className="hidden md:flex justify-between items-center mb-6 md:mb-10 transition-all">
             <div>
