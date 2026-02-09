@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useDataStore, useAuthStore } from '../store';
 import { Member, PaymentMethod, Transaction, Fellowship, FELLOWSHIP_PASTORS } from '../types';
 import { getSundayDate } from '../lib/dateUtils';
-import { Search, Plus, Check, RotateCcw, User as UserIcon, Calendar, Save, UserPlus, X, Trash2, Filter, LogOut, Play } from 'lucide-react';
+import { Search, Plus, Check, RotateCcw, User as UserIcon, Calendar, Save, UserPlus, X, Trash2, Filter, LogOut, Play, Power } from 'lucide-react';
 
 
 export const Entry: React.FC = () => {
@@ -119,6 +119,7 @@ export const Entry: React.FC = () => {
   const amountInputRef = useRef<HTMLInputElement>(null);
   const filterWrapperRef = useRef<HTMLDivElement>(null);
 
+
   // Click Outside Handler for Filter
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -214,29 +215,29 @@ export const Entry: React.FC = () => {
   }, [undoLastTransaction]);
 
   return (
-    <div className="h-full flex flex-col lg:flex-row gap-4 md:gap-6 animate-fade-in pb-4 md:pb-20 w-full max-w-full overflow-x-hidden px-4 md:px-0 box-border max-h-[calc(100vh-180px)] overflow-y-auto pb-[120px]">
+    <div className="h-full flex flex-col lg:flex-row gap-4 md:gap-6 animate-fade-in pb-4 md:pb-4 w-full max-w-full overflow-x-hidden px-4 md:px-0 box-border max-h-[calc(100vh-180px)] overflow-y-auto pb-[120px] md:pb-8">
       {/* Left Panel - Entry Form */}
-      <div className="w-full lg:w-5/12 flex flex-col h-full bg-white rounded-3xl p-4 md:p-6 relative border-gray-200 overflow-hidden mx-auto lg:mx-0 max-w-full shadow-sm">
+      <div className="w-[65%] lg:w-5/12 flex flex-col h-auto bg-white rounded-3xl p-6 md:p-6 pb-6 md:pb-16 relative border-gray-200 ml-[5%] lg:mx-0 max-w-full shadow-sm">
         {!isSessionActive ? (
           // SESSION SETUP VIEW
-          <div className="flex flex-col h-full justify-start pt-2 md:justify-center md:pt-0 animate-fade-in w-full">
-            <div className="mb-3 md:mb-6 text-center">
-              <div className="w-10 h-10 md:w-16 md:h-16 bg-indigo-100 rounded-xl md:rounded-3xl flex items-center justify-center mx-auto mb-2 md:mb-4 text-indigo-600 shadow-inner">
-                <Calendar className="w-5 h-5 md:w-8 md:h-8" />
+          <div className="flex flex-col h-auto w-full animate-fade-in">
+            <div className="mb-2 md:mb-1 text-center">
+              <div className="w-8 h-8 md:w-10 md:h-10 bg-indigo-100 rounded-xl md:rounded-2xl flex items-center justify-center mx-auto mb-1.5 md:mb-1 text-indigo-600 shadow-inner">
+                <Calendar className="w-4 h-4 md:w-5 md:h-5" />
               </div>
-              <h2 className="text-lg md:text-2xl font-black text-slate-800 mb-0.5 md:mb-2">Start a Session</h2>
-              <p className="text-slate-500 font-medium text-[10px] md:text-sm">Select the period for these transactions</p>
+              <h2 className="text-base md:text-lg font-black text-slate-800 mb-0.5 md:mb-0.5 text-center">Start a Session</h2>
+              <p className="text-slate-500 font-medium text-[10px] md:text-xs text-center">Select the period for these transactions</p>
             </div>
 
-            <div className="space-y-3 md:space-y-4 w-full px-1 max-w-full">
-              {/* Fiscal Year - Flex Row */}
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-sm md:text-base font-bold text-slate-700 whitespace-nowrap mr-3">Fiscal Year</label>
-                <div className="flex-1 relative">
+            <div className="space-y-3 md:space-y-2 w-full mx-auto px-1 max-w-full">
+              {/* Fiscal Year - Standardized Layout */}
+              <div className="mb-2 md:mb-1">
+                <label className="block text-[10px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 md:mb-1 text-left">Fiscal Year</label>
+                <div className="relative">
                   <select
                     value={sessionYear}
                     onChange={(e) => setSessionYear(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-1.5 px-3 font-bold text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow cursor-pointer hover:bg-slate-100"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-1.5 md:py-1 px-3 font-bold text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow cursor-pointer hover:bg-slate-100"
                   >
                     <option value="2024">2024</option>
                     <option value="2025">2025</option>
@@ -245,17 +246,17 @@ export const Entry: React.FC = () => {
                 </div>
               </div>
 
-              {/* Month - 3 Column Grid */}
+              {/* Month - 6 Column Grid (Squeezed) */}
               <div>
-                <label className="block text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 text-left">Month</label>
-                <div className="grid grid-cols-3 gap-2 w-full mb-6">
+                <label className="block text-[10px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 md:mb-1 text-left">Month</label>
+                <div className="grid grid-cols-6 gap-1 w-full mb-4 md:mb-2">
                   {['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'].map((m) => (
                     <button
                       key={m}
                       onClick={() => setSessionMonth(m)}
-                      className={`w-full min-w-0 px-3 py-3 rounded-2xl text-sm max-sm:text-xs max-sm:py-2 max-sm:px-1 font-bold transition-all flex items-center justify-center truncate ${sessionMonth === m
+                      className={`py-1.5 md:py-1 rounded-lg text-[10px] md:text-[10px] font-bold transition-all flex items-center justify-center ${sessionMonth === m
                         ? 'bg-indigo-600 text-white shadow-md'
-                        : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
+                        : 'bg-slate-50 border border-slate-200 text-slate-500 hover:bg-slate-100'
                         }`}
                     >
                       {m.slice(0, 3)}
@@ -264,17 +265,17 @@ export const Entry: React.FC = () => {
                 </div>
               </div>
 
-              {/* Week - 3 Column Grid */}
+              {/* Week - 5 Column Grid (Left Aligned) */}
               <div>
-                <label className="block text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 text-left">Week Number</label>
-                <div className="grid grid-cols-3 gap-2 w-full mb-6">
-                  {[1, 2, 3, 4].map((w) => (
+                <label className="block text-[10px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 md:mb-1 text-left">Week Number</label>
+                <div className="grid grid-cols-5 gap-1 w-full bg-slate-100 p-1 rounded-xl mb-4 md:mb-2">
+                  {[1, 2, 3, 4, 5].map((w) => (
                     <button
                       key={w}
                       onClick={() => setSessionWeek(w)}
-                      className={`w-full min-w-0 px-3 py-3 rounded-2xl text-sm max-sm:text-xs max-sm:py-2 max-sm:px-1 font-bold transition-all flex items-center justify-center ${sessionWeek === w
-                        ? 'bg-indigo-600 text-white shadow-md'
-                        : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
+                      className={`py-1.5 md:py-1 rounded-lg text-xs md:text-sm font-bold transition-all flex items-center justify-center ${sessionWeek === w
+                        ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5'
+                        : 'text-slate-400 hover:text-slate-600'
                         }`}
                     >
                       {w}
@@ -286,7 +287,7 @@ export const Entry: React.FC = () => {
               {/* Start Button */}
               <button
                 onClick={() => setIsSessionActive(true)}
-                className="w-full py-4 rounded-2xl bg-indigo-600 text-white font-bold relative mb-12 hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 flex items-center justify-center active:scale-[0.98] text-base"
+                className="w-full bg-indigo-600 text-white font-bold py-3 md:py-2 rounded-xl text-sm hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 flex items-center justify-center mt-2 mb-2 md:mt-1 active:scale-[0.98]"
               >
                 <Play className="w-4 h-4 mr-2 fill-current" />
                 Start Session
@@ -295,9 +296,9 @@ export const Entry: React.FC = () => {
           </div>
         ) : (
           // TRANSACTION ENTRY VIEW
-          <div className="flex flex-col h-full animate-fade-in">
+          <div className="flex flex-col h-auto animate-fade-in pb-0">
             {/* Session Header Banner */}
-            <div className="bg-slate-900 rounded-2xl p-4 mb-6 flex justify-between items-center text-white shadow-lg shadow-slate-200">
+            <div className="bg-slate-900 rounded-2xl p-4 md:p-2.5 mb-6 md:mb-2 flex justify-between items-center text-white shadow-lg shadow-slate-200">
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-widest text-indigo-300 mb-0.5">Active Session</div>
                 <div className="font-bold flex items-center">
@@ -307,21 +308,21 @@ export const Entry: React.FC = () => {
               </div>
               <button
                 onClick={() => setIsSessionActive(false)}
-                className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-colors"
+                className="bg-red-600 hover:bg-red-700 text-white p-2 md:p-1.5 rounded-lg transition-colors shadow-lg shadow-red-900/40 opacity-90 hover:opacity-100"
                 title="End Session"
               >
-                <LogOut className="w-4 h-4" />
+                <Power className="w-4 h-4 md:w-3.5 md:h-3.5" />
               </button>
             </div>
 
-            <div className="mb-2">
-              <h2 className="text-2xl font-bold text-[#1e1e2d]">New Transaction</h2>
-              <p className="text-gray-400 text-sm">Record a new tithe or offering</p>
+            <div className="mb-2 md:mb-1">
+              <h2 className="text-2xl md:text-lg font-bold text-[#1e1e2d]">New Transaction</h2>
+              <p className="text-gray-400 text-sm md:text-[10px]">Record a new tithe or offering</p>
             </div>
             {/* 1. Member Search */}
-            <div className="mb-8 relative z-20">
-              <div className="flex justify-between items-end mb-3">
-                <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider">1. Select Member</label>
+            <div className="mb-8 md:mb-2 relative z-20">
+              <div className="flex justify-between items-end mb-3 md:mb-1">
+                <label className="block text-sm md:text-[10px] font-bold text-slate-500 uppercase tracking-wider">1. Select Member</label>
                 <button
                   onClick={() => {
                     setNewMemberName(''); // Clear any previous search term default
@@ -334,7 +335,7 @@ export const Entry: React.FC = () => {
                 </button>
               </div>
               <div className="relative group">
-                <Search className="absolute left-5 top-4 text-slate-400 w-5 h-5 group-focus-within:text-indigo-500 transition-colors" />
+                <Search className="absolute left-5 top-4 md:top-2.5 text-slate-400 w-5 h-5 group-focus-within:text-indigo-500 transition-colors" />
                 <input
                   ref={searchInputRef}
                   type="text"
@@ -344,7 +345,7 @@ export const Entry: React.FC = () => {
                     setSelectedMember(null);
                   }}
                   placeholder="Type name or phone number..."
-                  className={`w-full text-base md:text-lg font-medium border-2 rounded-xl md:rounded-2xl py-2.5 md:py-3.5 pl-12 md:pl-14 pr-4 transition-all shadow-sm ${selectedMember
+                  className={`w-full text-base md:text-sm font-medium border-2 rounded-xl md:rounded-lg py-2.5 md:py-1.5 pl-12 md:pl-12 pr-4 transition-all shadow-sm ${selectedMember
                     ? 'bg-indigo-50/50 border-indigo-200 text-indigo-900 shadow-indigo-100'
                     : 'bg-white/50 border-slate-200 focus:border-indigo-500 focus:bg-white focus:shadow-lg focus:shadow-indigo-100'
                     }`}
@@ -465,11 +466,11 @@ export const Entry: React.FC = () => {
             )}
 
             {/* 2. Amount Input */}
-            <div className="flex flex-col justify-center mb-4 md:mb-8 relative py-2 md:py-0">
+            <div className="flex flex-col justify-center mb-4 md:mb-2 relative py-2 md:py-0">
               <div className="absolute inset-0 bg-gradient-to-b from-indigo-50/30 to-transparent rounded-3xl -z-10 opacity-0 transition-opacity duration-500" style={{ opacity: selectedMember ? 1 : 0 }}></div>
-              <label className="block text-sm font-bold text-slate-500 mb-2 md:mb-6 text-center uppercase tracking-wider">2. Enter Amount</label>
+              <label className="block text-sm md:text-[10px] font-bold text-slate-500 mb-2 md:mb-1 text-center uppercase tracking-wider">2. Enter Amount</label>
               <div className="flex items-center justify-center px-4 md:px-8">
-                <span className={`text-2xl md:text-5xl font-bold transition-colors duration-300 mr-1 md:mr-4 ${amount ? 'text-indigo-300' : 'text-slate-200'}`}>GH₵</span>
+                <span className={`text-2xl md:text-3xl font-bold transition-colors duration-300 mr-1 md:mr-2 ${amount ? 'text-indigo-300' : 'text-slate-200'}`}>GH₵</span>
                 <input
                   ref={amountInputRef}
                   type="number"
@@ -477,7 +478,7 @@ export const Entry: React.FC = () => {
                   onChange={(e) => setAmount(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
                   onWheel={(e) => (e.target as HTMLInputElement).blur()}
-                  className="flex-1 bg-transparent text-center text-4xl md:text-8xl font-black text-indigo-900 focus:outline-none placeholder-slate-200 drop-shadow-sm min-w-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  className="flex-1 bg-transparent text-center text-4xl md:text-5xl font-black text-indigo-900 focus:outline-none placeholder-slate-200 drop-shadow-sm min-w-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none py-2 md:py-0"
                   placeholder="0.00"
                   disabled={!selectedMember}
                 />
@@ -485,12 +486,12 @@ export const Entry: React.FC = () => {
             </div>
 
             {/* 3. Method Selection */}
-            <div className="grid grid-cols-2 gap-3 md:gap-4 mb-6 md:mb-8">
+            <div className="flex justify-center gap-3 md:gap-2 mb-6 md:mb-2">
               {[PaymentMethod.CASH, PaymentMethod.MOMO].map((m) => (
                 <button
                   key={m}
                   onClick={() => setMethod(m)}
-                  className={`py-3 md:py-4 rounded-xl md:rounded-2xl font-bold text-xs md:text-sm transition-all relative overflow-hidden ${method === m
+                  className={`w-36 md:w-28 py-3 md:py-2 rounded-xl md:rounded-lg font-bold text-xs md:text-[10px] transition-all relative overflow-hidden ${method === m
                     ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-300 scale-105 ring-4 ring-indigo-50'
                     : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:border-slate-300'
                     }`}
@@ -501,14 +502,16 @@ export const Entry: React.FC = () => {
               ))}
             </div>
 
-            <button
-              onClick={() => handleSubmit()}
-              disabled={!selectedMember || !amount}
-              className="w-full bg-slate-900 text-white font-bold py-3.5 md:py-5 rounded-xl md:rounded-2xl text-sm md:text-lg flex items-center justify-center shadow-xl shadow-slate-200 hover:shadow-2xl hover:shadow-indigo-900/20 hover:bg-indigo-900 active:scale-[0.98] transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none"
-            >
-              <Check className="w-5 h-5 md:w-6 md:h-6 mr-2" />
-              CONFIRM TRANSACTION
-            </button>
+            <div className="flex justify-center">
+              <button
+                onClick={() => handleSubmit()}
+                disabled={!selectedMember || !amount}
+                className="w-64 md:w-56 bg-slate-900 text-white font-bold py-3.5 md:py-2.5 rounded-xl md:rounded-lg text-sm md:text-sm flex items-center justify-center shadow-xl shadow-slate-200 hover:shadow-2xl hover:shadow-indigo-900/20 hover:bg-indigo-900 active:scale-[0.98] transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none"
+              >
+                <Check className="w-5 h-5 md:w-5 md:h-5 mr-2" />
+                CONFIRM TRANSACTION
+              </button>
+            </div>
 
             <p className="text-center text-xs text-slate-400 mt-6 font-medium">
               Press <kbd className="bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 text-slate-500">ENTER</kbd> to submit • <kbd className="bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 text-slate-500">CTRL+Z</kbd> to undo
@@ -519,7 +522,7 @@ export const Entry: React.FC = () => {
 
 
       {/* RIGHT PANEL - FEED */}
-      <div className="w-full lg:w-7/12 flex flex-col h-full">
+      <div className="w-[65%] lg:w-7/12 flex flex-col h-auto lg:h-full ml-[5%] lg:ml-0">
         {/* Stats Strip */}
         <div className="glass-card mb-4 md:mb-6 p-1 flex justify-between items-center pr-2">
           <div className="flex-1 px-4 md:px-4 py-2 md:py-2">
@@ -663,7 +666,7 @@ export const Entry: React.FC = () => {
               {transactions.length} Records
             </span>
           </div>
-          <div className="w-full overflow-x-auto flex-1 p-1 md:p-2">
+          <div className="w-full overflow-x-auto flex-1 p-1 md:p-2 pb-4 visible-scrollbar">
             <table className="w-full border-separate border-spacing-y-1">
               <thead className="sticky top-0 z-10">
                 <tr className="text-left text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider">

@@ -170,15 +170,15 @@ export const Directory: React.FC = () => {
     <div className="animate-fade-in relative min-h-screen overflow-x-hidden w-full">
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-slate-800 tracking-tight">Member Directory</h2>
-          <p className="text-slate-500 font-medium mt-1">Manage church membership database</p>
+          <h2 className="text-xl font-bold text-slate-800 tracking-tight">Member Directory</h2>
+          <p className="text-slate-500 font-medium mt-1 text-xs">Manage church membership database</p>
         </div>
         <div className="flex space-x-3">
           <button
             onClick={() => setIsAddMemberOpen(true)}
-            className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 hover:-translate-y-0.5"
+            className="flex items-center space-x-2 px-3 py-1.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 hover:-translate-y-0.5 text-xs"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-3.5 h-3.5" />
             <span>Add Member</span>
           </button>
         </div>
@@ -188,12 +188,12 @@ export const Directory: React.FC = () => {
         {/* Toolbar */}
         <div className="p-6 border-b border-white/20">
           <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
-            <div className="relative w-full md:w-96 group">
-              <Search className="absolute left-4 top-3 text-slate-400 w-5 h-5 group-focus-within:text-indigo-500 transition-colors" />
+            <div className="relative w-full md:w-80 group">
+              <Search className="absolute left-3 top-2.5 text-slate-400 w-3.5 h-3.5 group-focus-within:text-indigo-500 transition-colors" />
               <input
                 type="text"
-                placeholder="Search by name, phone, or fellowship..."
-                className="w-full bg-white/60 border border-slate-200 pl-12 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all shadow-sm focus:shadow-md"
+                placeholder="Search..."
+                className="w-full bg-white/60 border border-slate-200 pl-9 pr-3 py-1.5 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all shadow-sm focus:shadow-md text-xs"
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
               />
@@ -201,12 +201,12 @@ export const Directory: React.FC = () => {
 
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-bold transition-all shadow-sm border ${showFilters
+              className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg font-bold transition-all shadow-sm border text-xs ${showFilters
                 ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
                 : 'bg-white/60 border-slate-200 text-slate-600 hover:bg-white'
                 }`}
             >
-              <Filter className="w-4 h-4" />
+              <Filter className="w-3.5 h-3.5" />
               <span>Filters</span>
               <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
             </button>
@@ -304,51 +304,51 @@ export const Directory: React.FC = () => {
         <div className="overflow-x-auto w-full max-w-[calc(100vw-2.5rem)] md:max-w-full">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/50 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100">
-                <th className="px-8 py-5">Name / ID</th>
-                <th className="px-6 py-5">Contact</th>
-                <th className="px-6 py-5">Fellowship</th>
-                <th className="px-6 py-5">Status</th>
-                <th className="px-6 py-5 text-right">YTD Giving</th>
-                <th className="px-6 py-5"></th>
+              <tr className="bg-slate-50/50 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100">
+                <th className="px-4 py-2">Name / ID</th>
+                <th className="px-3 py-2">Contact</th>
+                <th className="px-3 py-2">Fellowship</th>
+                <th className="px-3 py-2">Status</th>
+                <th className="px-3 py-2 text-right">YTD Giving</th>
+                <th className="px-3 py-2"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100/50">
               {currentMembers.map((member) => (
                 <tr key={member.id} className="hover:bg-indigo-50/30 transition-colors group">
-                  <td className="px-8 py-5">
-                    <div className="font-bold text-slate-800">{member.name}</div>
-                    <div className="text-xs text-slate-400 font-mono font-medium">000000</div>
+                  <td className="px-4 py-2">
+                    <div className="font-bold text-slate-800 text-xs">{member.name}</div>
+                    <div className="text-[9px] text-slate-400 font-mono font-medium">000000</div>
                   </td>
-                  <td className="px-6 py-5 text-slate-600 font-medium">
+                  <td className="px-3 py-2 text-slate-600 font-medium text-xs">
                     {member.phone}
                   </td>
-                  <td className="px-6 py-5">
-                    <span className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold border ${getFellowshipBadgeClasses(member.fellowship)}`}>
+                  <td className="px-3 py-2">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${getFellowshipBadgeClasses(member.fellowship)}`}>
                       {member.fellowship}
                     </span>
                   </td>
-                  <td className="px-6 py-5">
+                  <td className="px-3 py-2">
                     {member.status === 'ACTIVE' ? (
-                      <span className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
                         ACTIVE
                       </span>
                     ) : (
-                      <span className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-700 border border-amber-100">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-100">
                         PROVISIONAL
                       </span>
                     )}
                   </td>
-                  <td className="px-6 py-5 text-right font-mono font-bold text-slate-700 text-lg">
+                  <td className="px-3 py-2 text-right font-mono font-bold text-slate-700 text-xs">
                     GH₵{member.ytdTotal.toLocaleString()}
                   </td>
-                  <td className="px-6 py-5 text-right flex justify-end space-x-2">
+                  <td className="px-3 py-2 text-right flex justify-end space-x-1">
                     <button
                       onClick={() => handleEditClick(member)}
-                      className="text-slate-400 hover:text-indigo-600 p-2 rounded-lg hover:bg-indigo-50 transition-colors"
+                      className="text-slate-400 hover:text-indigo-600 p-1 rounded hover:bg-indigo-50 transition-colors"
                       title="Edit Member"
                     >
-                      <Pencil className="w-5 h-5" />
+                      <Pencil className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => {
@@ -356,10 +356,10 @@ export const Directory: React.FC = () => {
                           deleteMember(member.id);
                         }
                       }}
-                      className="text-slate-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors"
+                      className="text-slate-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition-colors"
                       title="Delete Member"
                     >
-                      <Trash2 className="w-5 h-5" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </td>
                 </tr>
@@ -371,35 +371,35 @@ export const Directory: React.FC = () => {
 
         {/* Pagination Controls */}
         {totalPages > 0 && (
-          <div className="p-6 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center text-sm font-medium gap-4">
-            <span className="text-slate-400 whitespace-nowrap">
-              Showing <span className="font-bold text-indigo-900">{Math.min((currentPage - 1) * itemsPerPage + 1, filteredData.length)}</span> to <span className="font-bold text-indigo-900">{Math.min(currentPage * itemsPerPage, filteredData.length)}</span> of <span className="font-bold text-indigo-900">{filteredData.length}</span> entries
+          <div className="p-6 border-t border-slate-100 flex flex-col items-center gap-4 bg-slate-50/30">
+            <span className="text-slate-500 font-medium text-xs">
+              Showing <span className="font-bold text-slate-800">{Math.min((currentPage - 1) * itemsPerPage + 1, filteredData.length)}</span> to <span className="font-bold text-slate-800">{Math.min(currentPage * itemsPerPage, filteredData.length)}</span> of <span className="font-bold text-slate-800">{filteredData.length}</span> entries
             </span>
 
-            <div className="flex flex-nowrap items-center gap-2 w-full md:w-auto justify-center md:justify-end overflow-x-auto no-scrollbar pb-1">
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-500 font-bold hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm whitespace-nowrap"
+                className="px-4 py-2 rounded-xl bg-white border border-slate-100 text-slate-500 font-bold hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm text-xs"
               >
                 Previous
               </button>
 
-              <div className="flex space-x-1 flex-nowrap">
+              <div className="flex gap-2">
                 {getPageNumbers().map((page, idx) => (
                   typeof page === 'number' ? (
                     <button
                       key={idx}
                       onClick={() => setCurrentPage(page)}
-                      className={`min-w-[2.5rem] h-10 rounded-xl flex items-center justify-center text-sm font-bold transition-all shadow-sm ${currentPage === page
-                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-300 transform scale-105'
-                        : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 text-slate-600'
+                      className={`w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold transition-all shadow-sm ${currentPage === page
+                        ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
+                        : 'bg-white border border-slate-100 text-slate-600 hover:bg-slate-50'
                         }`}
                     >
                       {page}
                     </button>
                   ) : (
-                    <span key={idx} className="w-10 h-10 flex items-center justify-center text-slate-400 font-bold pb-2">...</span>
+                    <span key={idx} className="w-9 h-9 flex items-center justify-center text-slate-300 font-bold pb-2 text-xs">...</span>
                   )
                 ))}
               </div>
@@ -407,7 +407,7 @@ export const Directory: React.FC = () => {
               <button
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-500 font-bold hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm whitespace-nowrap"
+                className="px-4 py-2 rounded-xl bg-white border border-slate-100 text-slate-500 font-bold hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm text-xs"
               >
                 Next
               </button>

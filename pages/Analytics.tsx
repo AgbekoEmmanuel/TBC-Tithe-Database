@@ -278,17 +278,17 @@ export const Analytics: React.FC = () => {
         </div>
         , document.body)}
 
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-4 md:mb-8">
         <div>
-          <h2 className="text-3xl font-bold text-slate-800 tracking-tight">Financial Analytics</h2>
-          <p className="text-slate-500 font-medium mt-1">Deep dive into financial metrics</p>
+          <h2 className="text-lg md:text-3xl font-bold text-slate-800 tracking-tight">Financial Analytics</h2>
+          <p className="text-slate-500 font-medium mt-0.5 md:mt-1 text-xs md:text-base">Deep dive into financial metrics</p>
         </div>
         <div className="flex space-x-3">
           <button
             onClick={() => setIsReportModalOpen(true)}
-            className="flex items-center space-x-2 px-5 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
+            className="flex items-center space-x-1.5 md:space-x-2 px-3 py-1.5 md:px-5 md:py-3 bg-indigo-600 text-white rounded-lg md:rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-md md:shadow-lg shadow-indigo-200 text-xs md:text-base"
           >
-            <Printer className="w-4 h-4" />
+            <Printer className="w-3 h-3 md:w-4 md:h-4" />
             <span>Generate PDF</span>
           </button>
 

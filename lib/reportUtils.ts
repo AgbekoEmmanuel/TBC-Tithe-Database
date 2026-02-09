@@ -143,64 +143,107 @@ export const generatePDFReport = async (
     const periodText = `${period.month} ${period.year} ${period.week !== 'All' ? '- Week ' + period.week : '- Monthly Summary'}`;
     doc.text(periodText.toUpperCase(), 105, 36, { align: 'center' });
 
-    // 4. Summary Table
+    // --- 4. Fellowship Breakdown Table (First) ---
+    const fellowshipTableData = fellowshipArr.map(f => [
+        f.name,
+        `GHS ${f.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    ]);
+
+    // Add Total Row
+    fellowshipTableData.push(['TOTAL', `GHS ${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`]);
+
+    autoTable(doc, {
+        startY: 45,
+        head: [['FELLOWSHIP', 'AMOUNT']],
+        body: fellowshipTableData,
+        headStyles: {
+            fillColor: [30, 41, 59], // Slate 800
+            textColor: [255, 255, 255],
+            fontStyle: 'bold',
+            halign: 'left',
+            font: titleFont
+        },
+        bodyStyles: {
+            textColor: [51, 65, 85], // Slate 700
+            fontSize: 10,
+            halign: 'left',
+            font: bodyFont
+        },
+        columnStyles: {
+            0: { cellWidth: 100 },
+            1: { cellWidth: 80, halign: 'right', fontStyle: 'bold' }
+        },
+        alternateRowStyles: {
+            fillColor: [248, 250, 252] // Slate 50
+        },
+        foot: [['', '']], // Empty footer to draw line
+        footStyles: { fillColor: [255, 255, 255] },
+        theme: 'grid',
+        margin: { left: 15, right: 15 },
+        didParseCell: (data) => {
+            // Bold the Total Row
+            if (data.row.index === fellowshipTableData.length - 1 && data.section === 'body') {
+                data.cell.styles.fontStyle = 'bold';
+                data.cell.styles.fillColor = [241, 245, 249]; // Slate 100
+            }
+        }
+    });
+
+    // --- 5. Summary Stats Table (Second) ---
+    const summaryStartY = (doc as any).lastAutoTable.finalY + 10;
+
     const tableData = [
-        ['Total Collection', `GHS ${total.toLocaleString()}`],
         ['Best Performing Fellowship', best.name.toUpperCase()],
         ['Lowest Performing Fellowship', worst.name.toUpperCase()]
     ];
 
     autoTable(doc, {
-        startY: 50,
+        startY: summaryStartY,
         head: [['METRIC', 'VALUE']],
         body: tableData,
         headStyles: {
-            fillColor: [0, 0, 0], // Black header
+            fillColor: [71, 85, 105], // Slate 600
             textColor: [255, 255, 255],
             fontStyle: 'bold',
             halign: 'center',
-            minCellHeight: 12,
-            font: titleFont // Use Poppins in table header
+            minCellHeight: 10,
+            font: titleFont
         },
         bodyStyles: {
             textColor: [0, 0, 0],
-            fontSize: 11,
+            fontSize: 10,
             halign: 'center',
             minCellHeight: 10,
-            font: bodyFont // Use Poppins in table body
+            font: bodyFont
         },
         columnStyles: {
-            0: { cellWidth: 100, halign: 'left' }, // Metric column
-            1: { cellWidth: 80, halign: 'center', fontStyle: 'bold' }  // Value column
+            0: { cellWidth: 100, halign: 'left' },
+            1: { cellWidth: 80, halign: 'center', fontStyle: 'bold' }
         },
         theme: 'grid',
         margin: { left: 15, right: 15 }
     });
 
-    // 5. Fellowship Chart
-    // Draw simplified bar chart at the bottom
-    const startY = (doc as any).lastAutoTable.finalY + 25; // Adjusted startY
+    // --- 6. Fellowship Chart (New Page) ---
+    doc.addPage();
+    const chartStartY = 30; // Top of new page
     const chartHeight = 80;
-    const chartWidth = 170; // Reduced slightly for Y-axis labels
-    const startX = 25; // Shifted right for Y-axis labels
+    const chartWidth = 170;
+    const startX = 25;
 
     doc.setFontSize(14);
     doc.setTextColor(30, 41, 59);
     doc.setFont(titleFont, 'bold');
-    doc.text('Fellowship Performance (Weekly Breakdown)', 15, startY - 10);
+    doc.text('Weekly Trends (Chart)', 15, chartStartY - 10);
 
     // Draw Axes
     doc.setDrawColor(200, 200, 200);
-    doc.line(startX, startY, startX, startY + chartHeight); // Y Axis
-    doc.line(startX, startY + chartHeight, startX + chartWidth, startY + chartHeight); // X Axis
+    doc.line(startX, chartStartY, startX, chartStartY + chartHeight); // Y Axis
+    doc.line(startX, chartStartY + chartHeight, startX + chartWidth, chartStartY + chartHeight); // X Axis
 
     if (chartData.length > 0) {
         const maxVal = Math.max(...chartData.map(c => c.week1 + c.week2 + c.week3 + c.week4 + c.week5));
-
-        // Y Axis Max (round up to nearest 1000)
         const yMax = Math.ceil(maxVal / 1000) * 1000 || 1000;
-
-        // Draw Y-Axis Grid & Labels (0, 25%, 50%, 75%, 100%)
         const steps = 4;
         doc.setFontSize(8);
         doc.setTextColor(150);
@@ -208,25 +251,20 @@ export const generatePDFReport = async (
 
         for (let i = 0; i <= steps; i++) {
             const val = (yMax / steps) * i;
-            const yPos = (startY + chartHeight) - ((val / yMax) * chartHeight);
-
-            // Label
+            const yPos = (chartStartY + chartHeight) - ((val / yMax) * chartHeight);
             doc.text(`${val >= 1000 ? (val / 1000).toFixed(1) + 'k' : val}`, startX - 2, yPos + 1, { align: 'right' });
-
-            // Grid line (light)
-            if (i > 0) { // Don't draw over X axis
+            if (i > 0) {
                 doc.setDrawColor(240, 240, 240);
                 doc.line(startX, yPos, startX + chartWidth, yPos);
             }
         }
 
-        const barWidth = 8; // Slightly thinner
+        const barWidth = 8;
         const gap = (chartWidth - (chartData.length * barWidth)) / (chartData.length + 1);
 
         chartData.forEach((d, i) => {
             const x = startX + gap + (i * (barWidth + gap));
-            let currentY = startY + chartHeight;
-
+            let currentY = chartStartY + chartHeight;
             const weeks = [d.week1, d.week2, d.week3, d.week4, d.week5];
 
             weeks.forEach((val, wIdx) => {
@@ -234,33 +272,26 @@ export const generatePDFReport = async (
                     const h = (val / yMax) * chartHeight;
                     const color = WEEK_COLORS[wIdx];
                     doc.setFillColor(color[0], color[1], color[2]);
-                    // roundedRect(x, y, w, h, rx, ry, style)
-                    try {
-                        doc.roundedRect(x, currentY - h, barWidth, h, 1, 1, 'F');
-                    } catch (e) {
-                        // Fallback if roundedRect not supported/fails
-                        doc.rect(x, currentY - h, barWidth, h, 'F');
-                    }
+                    // Sharp Edges (rect)
+                    doc.rect(x, currentY - h, barWidth, h, 'F');
                     currentY -= h;
                 }
             });
 
-            // Label (Fellowship Name) - Staggered
             doc.setFontSize(7);
             doc.setTextColor(80);
             doc.setFont(bodyFont, 'normal');
-
             const displayName = d.name.length > 8 ? d.name.substring(0, 6) + '..' : d.name;
-            doc.text(displayName, x + barWidth / 2, startY + chartHeight + 4 + (i % 2 * 3), { align: 'center' }); // Stagger labels
+            doc.text(displayName, x + barWidth / 2, chartStartY + chartHeight + 4 + (i % 2 * 3), { align: 'center' });
         });
     }
 
     // Legend
-    const legendY = startY + chartHeight + 15;
+    const legendY = chartStartY + chartHeight + 15;
     let legendX = startX;
-    const weeks = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5'];
+    const weekLabels = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5'];
 
-    weeks.forEach((w, i) => {
+    weekLabels.forEach((w, i) => {
         const color = WEEK_COLORS[i];
         doc.setFillColor(color[0], color[1], color[2]);
         doc.rect(legendX, legendY, 3, 3, 'F');
@@ -270,8 +301,7 @@ export const generatePDFReport = async (
         legendX += 25;
     });
 
-
-    // 6. Footer
+    // 7. Footer
     const dateStr = new Date().toLocaleString();
     doc.setFontSize(8);
     doc.setTextColor(150);
@@ -279,5 +309,6 @@ export const generatePDFReport = async (
     doc.text('The Tithe Department', 195, 290, { align: 'right' });
 
     // 7. Save
-    doc.save(`Financial_Report_${period.year}_${period.month}.pdf`);
+    const fileName = `Tithe Report (${period.month} ${period.year}${period.week !== 'All' ? ' - Week ' + period.week : ' - Monthly'}).pdf`;
+    doc.save(fileName);
 };

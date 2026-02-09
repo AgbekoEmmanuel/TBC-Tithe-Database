@@ -95,3 +95,32 @@ body {
 .animate-fade-in {
   animation: fadeIn 0.4s ease-out forwards;
 }
+
+/* Forced Visible Scrollbar for Mobile Tables */
+.visible-scrollbar {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.visible-scrollbar::-webkit-scrollbar {
+  height: 8px;
+  /* Taller */
+  width: 8px;
+  display: block;
+}
+
+.visible-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  /* Visible track */
+  border-radius: 4px;
+}
+
+.visible-scrollbar::-webkit-scrollbar-thumb {
+  background: #64748b;
+  /* Darker thumb */
+  border-radius: 4px;
+}
+
+.visible-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
