@@ -249,7 +249,7 @@ export const Entry: React.FC = () => {
               {/* Month - Responsive Grid */}
               <div className="w-full">
                 <label className="block text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 md:mb-1 text-left">Month</label>
-                <div className="grid grid-cols-[repeat(auto-fit,minmax(35px,1fr))] gap-0 w-full mb-2 md:mb-2">
+                <div className="grid grid-cols-6 gap-0.5 w-full mb-2 md:mb-2">
                   {['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'].map((m) => (
                     <button
                       key={m}
