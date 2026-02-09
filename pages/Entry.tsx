@@ -215,9 +215,9 @@ export const Entry: React.FC = () => {
   }, [undoLastTransaction]);
 
   return (
-    <div className="h-full flex flex-col lg:flex-row gap-4 md:gap-6 animate-fade-in pb-4 md:pb-4 w-full max-w-full overflow-x-hidden px-2 md:px-0 box-border h-auto md:max-h-[calc(100vh-180px)] overflow-y-auto pb-[120px] md:pb-8">
+    <div className="h-full flex flex-col lg:flex-row gap-4 md:gap-6 animate-fade-in pb-4 md:pb-4 w-full max-w-full overflow-x-hidden px-4 md:px-0 box-border h-auto md:max-h-[calc(100vh-180px)] overflow-y-auto pb-[120px] md:pb-8">
       {/* Left Panel - Entry Form */}
-      <div className="w-full lg:w-5/12 flex flex-col h-auto bg-white rounded-3xl p-4 md:p-6 pb-6 md:pb-16 relative border-gray-200 mx-auto lg:mx-0 max-w-full shadow-sm">
+      <div className="w-full lg:w-5/12 flex flex-col h-auto bg-white rounded-3xl p-6 md:p-6 pb-6 md:pb-16 relative border-gray-200 mx-auto lg:mx-0 max-w-full shadow-sm">
         {!isSessionActive ? (
           // SESSION SETUP VIEW
           <div className="flex flex-col h-auto w-full animate-fade-in">
@@ -254,7 +254,7 @@ export const Entry: React.FC = () => {
                     <button
                       key={m}
                       onClick={() => setSessionMonth(m)}
-                      className={`flex-1 min-w-[30%] py-2 md:py-1 rounded-lg text-[10px] md:text-[10px] font-bold transition-all flex items-center justify-center ${sessionMonth === m
+                      className={`flex-1 min-w-[80px] py-2 md:py-1 rounded-lg text-[10px] md:text-[10px] font-bold transition-all flex items-center justify-center ${sessionMonth === m
                         ? 'bg-indigo-600 text-white shadow-md'
                         : 'bg-slate-50 border border-slate-200 text-slate-500 hover:bg-slate-100'
                         }`}
@@ -486,12 +486,12 @@ export const Entry: React.FC = () => {
             </div>
 
             {/* 3. Method Selection */}
-            <div className="flex justify-center gap-3 md:gap-2 mb-6 md:mb-2">
+            <div className="flex justify-center gap-3 md:gap-2 mb-6 md:mb-2 w-full">
               {[PaymentMethod.CASH, PaymentMethod.MOMO].map((m) => (
                 <button
                   key={m}
                   onClick={() => setMethod(m)}
-                  className={`w-36 md:w-28 py-3 md:py-2 rounded-xl md:rounded-lg font-bold text-xs md:text-[10px] transition-all relative overflow-hidden ${method === m
+                  className={`flex-1 py-3 md:py-2 rounded-xl md:rounded-lg font-bold text-xs md:text-[10px] transition-all relative overflow-hidden ${method === m
                     ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-300 scale-105 ring-4 ring-indigo-50'
                     : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:border-slate-300'
                     }`}
@@ -502,11 +502,11 @@ export const Entry: React.FC = () => {
               ))}
             </div>
 
-            <div className="flex justify-center">
+            <div className="flex justify-center w-full">
               <button
                 onClick={() => handleSubmit()}
                 disabled={!selectedMember || !amount}
-                className="w-64 md:w-56 bg-slate-900 text-white font-bold py-3.5 md:py-2.5 rounded-xl md:rounded-lg text-sm md:text-sm flex items-center justify-center shadow-xl shadow-slate-200 hover:shadow-2xl hover:shadow-indigo-900/20 hover:bg-indigo-900 active:scale-[0.98] transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none"
+                className="w-full md:w-56 bg-slate-900 text-white font-bold py-3.5 md:py-2.5 rounded-xl md:rounded-lg text-sm md:text-sm flex items-center justify-center shadow-xl shadow-slate-200 hover:shadow-2xl hover:shadow-indigo-900/20 hover:bg-indigo-900 active:scale-[0.98] transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none"
               >
                 <Check className="w-5 h-5 md:w-5 md:h-5 mr-2" />
                 CONFIRM TRANSACTION
