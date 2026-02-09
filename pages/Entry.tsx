@@ -247,14 +247,14 @@ export const Entry: React.FC = () => {
               </div>
 
               {/* Month - 6 Column Grid (Squeezed) */}
-              <div>
+              <div className="w-full">
                 <label className="block text-[10px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 md:mb-1 text-left">Month</label>
-                <div className="grid grid-cols-6 gap-1 w-full mb-4 md:mb-2">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 w-full mb-4 md:mb-2">
                   {['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'].map((m) => (
                     <button
                       key={m}
                       onClick={() => setSessionMonth(m)}
-                      className={`py-1.5 md:py-1 rounded-lg text-[10px] md:text-[10px] font-bold transition-all flex items-center justify-center ${sessionMonth === m
+                      className={`py-2 md:py-1 rounded-lg text-[10px] md:text-[10px] font-bold transition-all flex items-center justify-center ${sessionMonth === m
                         ? 'bg-indigo-600 text-white shadow-md'
                         : 'bg-slate-50 border border-slate-200 text-slate-500 hover:bg-slate-100'
                         }`}
@@ -266,14 +266,14 @@ export const Entry: React.FC = () => {
               </div>
 
               {/* Week - 5 Column Grid (Left Aligned) */}
-              <div>
+              <div className="w-full">
                 <label className="block text-[10px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 md:mb-1 text-left">Week Number</label>
-                <div className="grid grid-cols-5 gap-1 w-full bg-slate-100 p-1 rounded-xl mb-4 md:mb-2">
+                <div className="flex flex-wrap gap-2 w-full bg-slate-100 p-2 rounded-xl mb-4 md:mb-2">
                   {[1, 2, 3, 4, 5].map((w) => (
                     <button
                       key={w}
                       onClick={() => setSessionWeek(w)}
-                      className={`py-1.5 md:py-1 rounded-lg text-xs md:text-sm font-bold transition-all flex items-center justify-center ${sessionWeek === w
+                      className={`flex-1 min-w-[40px] py-1.5 md:py-1 rounded-lg text-xs md:text-sm font-bold transition-all flex items-center justify-center ${sessionWeek === w
                         ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5'
                         : 'text-slate-400 hover:text-slate-600'
                         }`}
