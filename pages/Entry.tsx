@@ -215,7 +215,7 @@ export const Entry: React.FC = () => {
   }, [undoLastTransaction]);
 
   return (
-    <div className="h-full flex flex-col lg:flex-row gap-4 md:gap-6 animate-fade-in pb-4 md:pb-4 w-full max-w-full overflow-x-hidden px-4 md:px-0 box-border max-h-[calc(100vh-180px)] overflow-y-auto pb-[120px] md:pb-8">
+    <div className="h-full flex flex-col lg:flex-row gap-4 md:gap-6 animate-fade-in pb-4 md:pb-4 w-full max-w-full overflow-x-hidden px-4 md:px-0 box-border h-auto md:max-h-[calc(100vh-180px)] overflow-y-auto pb-[120px] md:pb-8">
       {/* Left Panel - Entry Form */}
       <div className="w-full lg:w-5/12 flex flex-col h-auto bg-white rounded-3xl p-6 md:p-6 pb-6 md:pb-16 relative border-gray-200 mx-auto lg:mx-0 max-w-full shadow-sm">
         {!isSessionActive ? (
