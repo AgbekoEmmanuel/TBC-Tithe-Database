@@ -217,7 +217,7 @@ export const Entry: React.FC = () => {
   return (
     <div className="h-full flex flex-col lg:flex-row gap-4 md:gap-6 animate-fade-in pb-4 md:pb-4 w-full max-w-full overflow-x-hidden px-4 md:px-0 box-border h-auto md:max-h-[calc(100vh-180px)] overflow-y-auto pb-[120px] md:pb-8">
       {/* Left Panel - Entry Form */}
-      <div className="w-full lg:w-5/12 flex flex-col h-auto bg-white rounded-3xl p-6 md:p-6 pb-6 md:pb-16 relative border-gray-200 mx-auto lg:mx-0 max-w-full shadow-sm">
+      <div className="w-full lg:w-5/12 flex flex-col h-auto bg-white rounded-3xl p-4 md:p-6 pb-6 md:pb-16 relative border-gray-200 mx-auto lg:mx-0 max-w-full shadow-sm">
         {!isSessionActive ? (
           // SESSION SETUP VIEW
           <div className="flex flex-col h-auto w-full animate-fade-in">
@@ -254,7 +254,7 @@ export const Entry: React.FC = () => {
                     <button
                       key={m}
                       onClick={() => setSessionMonth(m)}
-                      className={`flex-1 min-w-[80px] py-2 md:py-1 rounded-lg text-[10px] md:text-[10px] font-bold transition-all flex items-center justify-center ${sessionMonth === m
+                      className={`flex-1 min-w-[70px] py-2 md:py-1 rounded-lg text-[10px] md:text-[10px] font-bold transition-all flex items-center justify-center ${sessionMonth === m
                         ? 'bg-indigo-600 text-white shadow-md'
                         : 'bg-slate-50 border border-slate-200 text-slate-500 hover:bg-slate-100'
                         }`}
@@ -399,7 +399,7 @@ export const Entry: React.FC = () => {
                   className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden relative"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="bg-[#1e1e2d] px-8 py-6 flex justify-between items-center">
+                  <div className="bg-[#1e1e2d] px-4 md:px-8 py-4 md:py-6 flex justify-between items-center">
                     <h3 className="text-xl font-bold text-white">Add New Member</h3>
                     <button onClick={() => setIsAddMemberOpen(false)} className="text-white/50 hover:text-white transition-colors">
                       <X className="w-6 h-6" />
@@ -486,7 +486,7 @@ export const Entry: React.FC = () => {
             </div>
 
             {/* 3. Method Selection */}
-            <div className="flex justify-center gap-3 md:gap-2 mb-6 md:mb-2 w-full">
+            <div className="flex justify-center gap-2 md:gap-2 mb-6 md:mb-2 w-full">
               {[PaymentMethod.CASH, PaymentMethod.MOMO].map((m) => (
                 <button
                   key={m}
@@ -547,7 +547,7 @@ export const Entry: React.FC = () => {
 
               {/* Filter Popover */}
               {isFilterOpen && (
-                <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 p-5 animate-fade-in z-50">
+                <div className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-slate-100 p-5 animate-fade-in z-50">
                   <div className="space-y-4">
                     {/* Header */}
                     <div className="flex justify-between items-center mb-2">
