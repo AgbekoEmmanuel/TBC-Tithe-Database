@@ -176,7 +176,7 @@ export const Directory: React.FC = () => {
         <div className="flex space-x-3">
           <button
             onClick={() => setIsAddMemberOpen(true)}
-            className="flex items-center space-x-2 px-3 py-1.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 hover:-translate-y-0.5 text-xs"
+            className="flex items-center space-x-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 hover:-translate-y-0.5 text-xs"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add Member</span>

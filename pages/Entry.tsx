@@ -328,9 +328,9 @@ export const Entry: React.FC = () => {
                     setNewMemberName(''); // Clear any previous search term default
                     setIsAddMemberOpen(true);
                   }}
-                  className="text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg flex items-center transition-colors"
+                  className="text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-4 py-2.5 rounded-md flex items-center transition-colors shadow-sm border border-indigo-100"
                 >
-                  <UserPlus className="w-4 h-4 mr-1.5" />
+                  <UserPlus className="w-4 h-4 mr-2" />
                   New Member
                 </button>
               </div>
