@@ -254,7 +254,7 @@ export const Entry: React.FC = () => {
                     <button
                       key={m}
                       onClick={() => setSessionMonth(m)}
-                      className={`flex-1 min-w-[70px] py-2 md:py-1 rounded-lg text-[10px] md:text-[10px] font-bold transition-all flex items-center justify-center ${sessionMonth === m
+                      className={`flex-1 py-2 md:py-1 rounded-lg text-[10px] md:text-[10px] font-bold transition-all flex items-center justify-center ${sessionMonth === m
                         ? 'bg-indigo-600 text-white shadow-md'
                         : 'bg-slate-50 border border-slate-200 text-slate-500 hover:bg-slate-100'
                         }`}
@@ -273,7 +273,7 @@ export const Entry: React.FC = () => {
                     <button
                       key={w}
                       onClick={() => setSessionWeek(w)}
-                      className={`flex-1 min-w-[40px] py-1.5 md:py-1 rounded-lg text-xs md:text-sm font-bold transition-all flex items-center justify-center ${sessionWeek === w
+                      className={`flex-1 py-1.5 md:py-1 rounded-lg text-xs md:text-sm font-bold transition-all flex items-center justify-center ${sessionWeek === w
                         ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5'
                         : 'text-slate-400 hover:text-slate-600'
                         }`}
