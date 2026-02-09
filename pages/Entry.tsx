@@ -522,7 +522,7 @@ export const Entry: React.FC = () => {
 
 
       {/* RIGHT PANEL - FEED */}
-      <div className="w-[65%] lg:w-7/12 flex flex-col h-auto lg:h-full ml-[5%] lg:ml-0">
+      <div className="w-full md:w-[65%] lg:w-7/12 flex flex-col h-auto lg:h-full mx-auto md:ml-[5%] lg:ml-0">
         {/* Stats Strip */}
         <div className="glass-card mb-4 md:mb-6 p-1 flex justify-between items-center pr-2">
           <div className="flex-1 px-4 md:px-4 py-2 md:py-2">
