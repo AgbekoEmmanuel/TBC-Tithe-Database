@@ -182,6 +182,7 @@ export const useDataStore = create<DataState>((set, get) => ({
           memberId: t.member_id,
           memberName: t.member_name,
           officerId: t.officer_id,
+          officerName: t.officer_name,
         })) as Transaction[],
         batches: (batchesRes.data || []).map((b: any) => ({
           ...b,
@@ -220,6 +221,7 @@ export const useDataStore = create<DataState>((set, get) => ({
       method: txn.method,
       timestamp: txn.timestamp,
       officer_id: txn.officerId,
+      officer_name: txn.officerName,
       member_name: txn.memberName,
       fellowship: txn.fellowship
     };

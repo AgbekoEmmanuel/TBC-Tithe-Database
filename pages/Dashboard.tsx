@@ -32,13 +32,20 @@ export const Dashboard: React.FC = () => {
 
   const [velocityFilter, setVelocityFilter] = React.useState<{ month: string; year: string }>({ month: 'Jan', year: '2025' });
   const [fellowshipFilter, setFellowshipFilter] = React.useState<{ month: string; year: string }>({ month: 'Jan', year: '2025' });
+  const [overviewYear, setOverviewYear] = React.useState<string>('2025');
 
-  const totalAmount = transactions.reduce((acc, t) => acc + t.amount, 0);
-  const activeGivers = new Set(transactions.map(t => t.memberId)).size;
+  // Filter transactions for Financial Overview based on selected year
+  const overviewTransactions = transactions.filter(t => {
+    const d = new Date(t.timestamp);
+    return d.getFullYear() === parseInt(overviewYear);
+  });
+
+  const totalAmount = overviewTransactions.reduce((acc, t) => acc + t.amount, 0);
+  const activeGivers = new Set(overviewTransactions.map(t => t.memberId)).size;
   const avgGift = activeGivers > 0 ? totalAmount / activeGivers : 0;
 
   // Highest Tither Calculation
-  const memberTotals = transactions.reduce((acc, t) => {
+  const memberTotals = overviewTransactions.reduce((acc, t) => {
     acc[t.memberName] = (acc[t.memberName] || 0) + t.amount;
     return acc;
   }, {} as Record<string, number>);
@@ -137,7 +144,18 @@ export const Dashboard: React.FC = () => {
 
         {/* KPI Cards Column */}
         <div className="xl:w-1/2 flex flex-col gap-6">
-          <h2 className="text-xl font-bold text-[#1e1e2d] mb-[-10px]">Financial Overview</h2>
+          <div className="flex justify-between items-center mb-[-10px]">
+            <h2 className="text-xl font-bold text-[#1e1e2d]">Financial Overview</h2>
+            <div className="bg-white p-1 rounded-xl shadow-sm border border-slate-100 flex items-center">
+              <select
+                value={overviewYear}
+                onChange={(e) => setOverviewYear(e.target.value)}
+                className="bg-transparent text-xs font-bold text-slate-600 focus:outline-none cursor-pointer px-2"
+              >
+                {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </div>
+          </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-6">
             {[

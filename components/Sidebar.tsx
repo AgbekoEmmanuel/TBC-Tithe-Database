@@ -78,9 +78,7 @@ export const Sidebar: React.FC = () => {
         <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
         <NavItem to="/operations/entry" icon={PlusCircle} label="New Entry" />
 
-        {user?.role === Role.SUPERVISOR && (
-          <NavItem to="/operations/reconcile" icon={Wallet} label="Reconcile" />
-        )}
+
 
         <NavItem to="/directory" icon={Users} label="Member Directory" />
         <NavItem to="/analytics" icon={PieChart} label="Analytics" />

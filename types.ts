@@ -62,6 +62,7 @@ export interface Transaction {
   method: PaymentMethod;
   timestamp: string; // ISO string
   officerId: string;
+  officerName?: string; // Display name of the officer who entered it
 }
 
 export interface Batch {

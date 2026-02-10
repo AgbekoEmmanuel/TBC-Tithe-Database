@@ -166,9 +166,7 @@ export const Layout: React.FC = () => {
                 <MobileNavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
                 <MobileNavItem to="/operations/entry" icon={PlusCircle} label="New Entry" />
 
-                {user?.role === Role.SUPERVISOR && (
-                  <MobileNavItem to="/operations/reconcile" icon={Wallet} label="Reconcile" />
-                )}
+
 
                 <MobileNavItem to="/directory" icon={Users} label="Member Directory" />
                 <MobileNavItem to="/analytics" icon={PieChart} label="Analytics" />

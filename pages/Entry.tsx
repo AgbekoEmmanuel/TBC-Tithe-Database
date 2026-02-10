@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useDataStore, useAuthStore } from '../store';
-import { Member, PaymentMethod, Transaction, Fellowship, FELLOWSHIP_PASTORS } from '../types';
+import { Member, PaymentMethod, Transaction, Fellowship, FELLOWSHIP_PASTORS, Role } from '../types';
 import { getSundayDate } from '../lib/dateUtils';
 import { Search, Plus, Check, RotateCcw, User as UserIcon, Calendar, Save, UserPlus, X, Trash2, Filter, LogOut, Play, Power } from 'lucide-react';
 
@@ -184,7 +184,8 @@ export const Entry: React.FC = () => {
       amount: numAmount,
       method,
       timestamp: getSundayDate(parseInt(sessionYear), sessionMonth, sessionWeek), // Use Session Date
-      officerId: user?.id || 'sys'
+      officerId: user?.id || 'sys',
+      officerName: user?.name || 'Admin Entry'
     };
 
 
@@ -671,6 +672,7 @@ export const Entry: React.FC = () => {
               <thead className="sticky top-0 z-10">
                 <tr className="text-left text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider">
                   <th className="px-3 md:px-4 py-2 md:py-2 bg-white/80 backdrop-blur rounded-l-xl">Date</th>
+                  <th className="px-3 md:px-4 py-2 md:py-2 bg-white/80 backdrop-blur">Entered By</th>
                   <th className="px-3 md:px-4 py-2 md:py-2 bg-white/80 backdrop-blur">Member</th>
                   <th className="px-3 md:px-4 py-2 md:py-2 bg-white/80 backdrop-blur">Method</th>
                   <th className="px-3 md:px-4 py-2 md:py-2 text-right bg-white/80 backdrop-blur">Amount</th>
@@ -682,6 +684,9 @@ export const Entry: React.FC = () => {
                   <tr key={txn.id} className="hover:bg-white/60 transition-colors group">
                     <td className="px-3 md:px-4 py-2 md:py-2 text-slate-500 font-mono text-[10px] md:text-xs font-medium rounded-l-xl border-l-4 border-transparent hover:border-indigo-400">
                       {new Date(txn.timestamp).toLocaleDateString()}
+                    </td>
+                    <td className="px-3 md:px-4 py-2 md:py-2 text-[10px] md:text-xs font-bold text-indigo-900/70">
+                      {txn.officerName || 'Admin Entry'}
                     </td>
                     <td className="px-3 md:px-4 py-2 md:py-2">
                       <div className="font-bold text-slate-700 text-xs md:text-sm">{txn.memberName}</div>
@@ -699,17 +704,22 @@ export const Entry: React.FC = () => {
                       GH₵{txn.amount.toLocaleString()}
                     </td>
                     <td className="px-2 md:px-4 py-2 md:py-3 rounded-r-xl text-center">
-                      <button
-                        onClick={() => {
-                          if (window.confirm('Are you sure you want to delete this transaction?')) {
-                            deleteTransaction(txn.id);
-                          }
-                        }}
-                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Delete Transaction"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {(
+                        (txn.officerId === user?.id) ||
+                        ((!txn.officerId || txn.officerId === 'sys') && user?.role === Role.SUPERVISOR)
+                      ) && (
+                          <button
+                            onClick={() => {
+                              if (window.confirm('Are you sure you want to delete this transaction?')) {
+                                deleteTransaction(txn.id);
+                              }
+                            }}
+                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete Transaction"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                     </td>
                   </tr>
                 ))}
