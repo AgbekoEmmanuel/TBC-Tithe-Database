@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { useDataStore, useAuthStore } from '../store';
-import { Member, PaymentMethod, Transaction, Fellowship, FELLOWSHIP_PASTORS, Role } from '../types';
+import { PaymentMethod, Transaction, Fellowship, FELLOWSHIP_PASTORS, Role } from '../types';
 import { getSundayDate } from '../lib/dateUtils';
-import { Search, Plus, Check, RotateCcw, User as UserIcon, Calendar, Save, UserPlus, X, Trash2, Filter, LogOut, Play, Power } from 'lucide-react';
+import { Calendar, Trash2, Filter, Play, Power, ArrowLeft, Upload, Users } from 'lucide-react';
 
 
 export const Entry: React.FC = () => {
-  const { members, transactions, activeBatchId, addTransaction, deleteTransaction, undoLastTransaction, addMember } = useDataStore();
+  const { members, transactions, activeBatchId, bulkAddTransactions, deleteTransaction } = useDataStore();
   const { user } = useAuthStore();
 
   // Session State
@@ -16,16 +15,12 @@ export const Entry: React.FC = () => {
   const [sessionWeek, setSessionWeek] = useState(1);
   const [isSessionActive, setIsSessionActive] = useState(false);
 
-  // State
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
-  const [amount, setAmount] = useState('');
-  const [method, setMethod] = useState<PaymentMethod>(PaymentMethod.CASH);
-  const [showToast, setShowToast] = useState(false);
-  const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
-  const [newMemberName, setNewMemberName] = useState('');
-  const [newMemberPhone, setNewMemberPhone] = useState('');
-  const [newMemberFellowship, setNewMemberFellowship] = useState<Fellowship>(Fellowship.Thyatira);
+  // Workflow State
+  const [viewMode, setViewMode] = useState<'FELLOWSHIP_SELECT' | 'BULK_ENTRY'>('FELLOWSHIP_SELECT');
+  const [selectedFellowship, setSelectedFellowship] = useState<Fellowship | null>(null);
+  const [bulkEntries, setBulkEntries] = useState<Record<string, string>>({}); // MemberId -> Amount (string for input handling)
+
+  // Filtering & Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
@@ -48,9 +43,77 @@ export const Entry: React.FC = () => {
     endDate: ''
   });
 
-  const itemsPerPage = 7;
+  // Refs
+  const filterWrapperRef = useRef<HTMLDivElement>(null);
 
-  // Pagination Logic
+  // Click Outside Handler for Filter
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (filterWrapperRef.current && !filterWrapperRef.current.contains(event.target as Node)) {
+        setIsFilterOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [filterWrapperRef]);
+
+  // Bulk Entry Logic
+  const getMembersInFellowship = () => {
+    return members.filter(m => m.fellowship === selectedFellowship && m.status === 'ACTIVE');
+  };
+
+  const handleBulkAmountChange = (memberId: string, value: string) => {
+    setBulkEntries(prev => ({
+      ...prev,
+      [memberId]: value
+    }));
+  };
+
+  const submitBulkSession = async () => {
+    if (!selectedFellowship) return;
+
+    const entriesToSubmit: Transaction[] = [];
+    const memberIds = Object.keys(bulkEntries);
+    const timestamp = getSundayDate(parseInt(sessionYear), sessionMonth, sessionWeek);
+    const batchId = `BATCH-${Date.now()}`; // Ideally this should be the active batch ID or a new session one
+
+    memberIds.forEach(id => {
+      const amountStr = bulkEntries[id];
+      const amount = parseFloat(amountStr);
+
+      if (!isNaN(amount) && amount > 0) {
+        const member = members.find(m => m.id === id);
+        if (member) {
+          entriesToSubmit.push({
+            id: `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            batchId: activeBatchId || batchId,
+            memberId: member.id,
+            memberName: member.name,
+            fellowship: member.fellowship,
+            amount: amount,
+            method: PaymentMethod.CASH, // Default to CASH for now, maybe add toggle later
+            timestamp: timestamp,
+            officerId: user?.id || 'sys',
+            officerName: user?.name || 'Admin Entry'
+          });
+        }
+      }
+    });
+
+    if (entriesToSubmit.length > 0) {
+      await bulkAddTransactions(entriesToSubmit);
+      // alert(`Successfully saved ${entriesToSubmit.length} transactions!`);
+      // Reset or go back
+      setBulkEntries({});
+      setViewMode('FELLOWSHIP_SELECT');
+      setSelectedFellowship(null);
+    }
+  };
+
+  // Pagination Logic (unchanged for right panel)
+  const itemsPerPage = 7;
   const filteredTransactions = transactions.filter(t => {
     const matchesMethod = appliedFilters.method === 'ALL' || t.method === appliedFilters.method;
     const matchesFellowship = appliedFilters.fellowship === 'ALL' || t.fellowship === appliedFilters.fellowship;
@@ -72,7 +135,6 @@ export const Entry: React.FC = () => {
 
   const handleOpenFilter = () => {
     if (!isFilterOpen) {
-      // Sync pending state with active applied state when opening
       setFilterMethod(appliedFilters.method);
       setFilterFellowship(appliedFilters.fellowship);
       setFilterMinAmount(appliedFilters.min);
@@ -112,109 +174,6 @@ export const Entry: React.FC = () => {
     return pages;
   };
 
-  // Filtered members
-
-  // Refs for focus management
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const amountInputRef = useRef<HTMLInputElement>(null);
-  const filterWrapperRef = useRef<HTMLDivElement>(null);
-
-
-  // Click Outside Handler for Filter
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (filterWrapperRef.current && !filterWrapperRef.current.contains(event.target as Node)) {
-        setIsFilterOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [filterWrapperRef]);
-
-  // Filtered members
-  const filteredMembers = searchTerm.length > 1
-    ? members.filter(m => m.name.toLowerCase().includes(searchTerm.toLowerCase()) || m.phone.includes(searchTerm))
-    : [];
-
-  const handleQuickAdd = async () => {
-    if (!newMemberName) return;
-    const newMember = await addMember({
-      name: newMemberName,
-      phone: newMemberPhone,
-      fellowship: newMemberFellowship
-    });
-
-    if (newMember) {
-      handleMemberSelect(newMember);
-    }
-
-    setIsAddMemberOpen(false);
-    // Reset form
-    setNewMemberPhone('');
-    setNewMemberFellowship(Fellowship.Thyatira);
-  };
-
-  const openQuickAdd = () => {
-    setNewMemberName(searchTerm);
-    setIsAddMemberOpen(true);
-  };
-
-  const handleMemberSelect = (member: Member) => {
-    setSelectedMember(member);
-    setSearchTerm('');
-    // Focus amount input instantly
-    setTimeout(() => amountInputRef.current?.focus(), 50);
-  };
-
-  const handleSubmit = (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (!selectedMember || !amount) return;
-
-    const numAmount = parseFloat(amount);
-    if (isNaN(numAmount) || numAmount <= 0) return;
-
-    const newTxn: Transaction = {
-      id: `TXN-${Date.now()}`,
-      batchId: 'BATCH-CURRENT',
-      memberId: selectedMember.id,
-      memberName: selectedMember.name,
-      fellowship: selectedMember.fellowship,
-      amount: numAmount,
-      method,
-      timestamp: getSundayDate(parseInt(sessionYear), sessionMonth, sessionWeek), // Use Session Date
-      officerId: user?.id || 'sys',
-      officerName: user?.name || 'Admin Entry'
-    };
-
-
-
-    addTransaction(newTxn);
-
-    // Reset
-    setAmount('');
-    setSelectedMember(null);
-    setMethod(PaymentMethod.CASH);
-
-    // Toast & Refocus
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 2000);
-    searchInputRef.current?.focus();
-  };
-
-  // Keyboard Shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-        e.preventDefault();
-        undoLastTransaction();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undoLastTransaction]);
-
   return (
     <div className="h-full flex flex-col lg:flex-row gap-4 md:gap-6 animate-fade-in pb-4 md:pb-4 w-full max-w-[100vw] overflow-x-hidden px-0 md:px-0 box-border h-auto md:max-h-[calc(100vh-180px)] overflow-y-auto pb-[120px] md:pb-8">
       {/* Left Panel - Entry Form */}
@@ -231,7 +190,7 @@ export const Entry: React.FC = () => {
             </div>
 
             <div className="space-y-3 md:space-y-2 w-full mx-auto px-1 max-w-full">
-              {/* Fiscal Year - Standardized Layout */}
+              {/* Fiscal Year */}
               <div className="mb-2 md:mb-1">
                 <label className="block text-[10px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 md:mb-1 text-left">Fiscal Year</label>
                 <div className="relative">
@@ -247,7 +206,7 @@ export const Entry: React.FC = () => {
                 </div>
               </div>
 
-              {/* Month - Responsive Grid */}
+              {/* Month */}
               <div className="w-full">
                 <label className="block text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 md:mb-1 text-left">Month</label>
                 <div className="grid grid-cols-6 gap-0.5 w-full mb-2 md:mb-2">
@@ -266,15 +225,15 @@ export const Entry: React.FC = () => {
                 </div>
               </div>
 
-              {/* Week - Responsive Grid */}
+              {/* Week */}
               <div className="w-full">
                 <label className="block text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 md:mb-1 text-left">Week Number</label>
                 <div className="grid grid-cols-5 gap-0 w-full bg-slate-100 p-1 rounded-lg mb-2 md:mb-2">
-                  {[1, 2, 3, 4, 5].map((w) => (
+                  {['1', '2', '3', '4', '5'].map((w) => (
                     <button
                       key={w}
-                      onClick={() => setSessionWeek(w)}
-                      className={`py-1 md:py-1 rounded text-[10px] md:text-sm font-bold transition-all flex items-center justify-center ${sessionWeek === w
+                      onClick={() => setSessionWeek(parseInt(w))}
+                      className={`py-1 md:py-1 rounded text-[10px] md:text-sm font-bold transition-all flex items-center justify-center ${sessionWeek.toString() === w
                         ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5'
                         : 'text-slate-400 hover:text-slate-600'
                         }`}
@@ -287,7 +246,10 @@ export const Entry: React.FC = () => {
 
               {/* Start Button */}
               <button
-                onClick={() => setIsSessionActive(true)}
+                onClick={() => {
+                  setIsSessionActive(true);
+                  setViewMode('FELLOWSHIP_SELECT');
+                }}
                 className="w-full bg-indigo-600 text-white font-bold py-3 md:py-2 rounded-xl text-sm hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 flex items-center justify-center mt-2 mb-2 md:mt-1 active:scale-[0.98]"
               >
                 <Play className="w-4 h-4 mr-2 fill-current" />
@@ -296,227 +258,119 @@ export const Entry: React.FC = () => {
             </div>
           </div>
         ) : (
-          // TRANSACTION ENTRY VIEW
-          <div className="flex flex-col h-auto animate-fade-in pb-0">
+          <div className="flex flex-col h-full animate-fade-in relative">
             {/* Session Header Banner */}
-            <div className="bg-slate-900 rounded-2xl p-4 md:p-2.5 mb-6 md:mb-2 flex justify-between items-center text-white shadow-lg shadow-slate-200">
+            <div className="bg-slate-900 rounded-xl p-3 mb-4 flex justify-between items-center text-white shadow-lg sticky top-0 z-20">
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-widest text-indigo-300 mb-0.5">Active Session</div>
-                <div className="font-bold flex items-center">
-                  <Calendar className="w-4 h-4 mr-2 opacity-75" />
-                  {sessionMonth} {sessionYear} <span className="mx-2 opacity-50">|</span> Week {sessionWeek}
+                <div className="font-bold flex items-center text-sm md:text-base">
+                  <Calendar className="w-3.5 h-3.5 mr-2 opacity-75" />
+                  {sessionMonth.slice(0, 3)} {sessionYear} <span className="mx-2 opacity-50">|</span> Week {sessionWeek}
                 </div>
               </div>
               <button
-                onClick={() => setIsSessionActive(false)}
-                className="bg-red-600 hover:bg-red-700 text-white p-2 md:p-1.5 rounded-lg transition-colors shadow-lg shadow-red-900/40 opacity-90 hover:opacity-100"
+                onClick={() => {
+                  if (window.confirm('End session? Unsaved inputs will be lost.')) {
+                    setIsSessionActive(false);
+                    setBulkEntries({});
+                    setViewMode('FELLOWSHIP_SELECT');
+                  }
+                }}
+                className="bg-red-600/90 hover:bg-red-600 text-white p-2 rounded-lg transition-colors shadow-sm"
                 title="End Session"
               >
-                <Power className="w-4 h-4 md:w-3.5 md:h-3.5" />
+                <Power className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="mb-2 md:mb-1">
-              <h2 className="text-2xl md:text-lg font-bold text-[#1e1e2d]">New Transaction</h2>
-              <p className="text-gray-400 text-sm md:text-[10px]">Record a new tithe or offering</p>
-            </div>
-            {/* 1. Member Search */}
-            <div className="mb-8 md:mb-2 relative z-20">
-              <div className="flex justify-between items-end mb-3 md:mb-1">
-                <label className="block text-sm md:text-[10px] font-bold text-slate-500 uppercase tracking-wider">1. Select Member</label>
-                <button
-                  onClick={() => {
-                    setNewMemberName(''); // Clear any previous search term default
-                    setIsAddMemberOpen(true);
-                  }}
-                  className="text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-4 py-2.5 rounded-md flex items-center transition-colors shadow-sm border border-indigo-100"
-                >
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  New Member
-                </button>
-              </div>
-              <div className="relative group">
-                <Search className="absolute left-5 top-4 md:top-2.5 text-slate-400 w-5 h-5 group-focus-within:text-indigo-500 transition-colors" />
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  value={selectedMember ? selectedMember.name : searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setSelectedMember(null);
-                  }}
-                  placeholder="Type name or phone number..."
-                  className={`w-full text-base md:text-sm font-medium border-2 rounded-xl md:rounded-lg py-2.5 md:py-1.5 pl-12 md:pl-12 pr-4 transition-all shadow-sm ${selectedMember
-                    ? 'bg-indigo-50/50 border-indigo-200 text-indigo-900 shadow-indigo-100'
-                    : 'bg-white/50 border-slate-200 focus:border-indigo-500 focus:bg-white focus:shadow-lg focus:shadow-indigo-100'
-                    }`}
-                />
-              </div>
+            {viewMode === 'FELLOWSHIP_SELECT' && (
+              <div className="animate-fade-in flex-1">
+                <div className="text-center mb-6">
+                  <h2 className="text-xl font-bold text-slate-800">Select Fellowship</h2>
+                  <p className="text-slate-400 text-xs mt-1">Choose a fellowship to begin bulk entry</p>
+                </div>
 
-              {/* Dropdown Results */}
-              {!selectedMember && searchTerm.length > 1 && (
-                <div className="absolute top-full left-0 right-0 mt-3 bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 max-h-80 overflow-y-auto z-50 p-2">
-                  {filteredMembers.map(m => (
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  {Object.values(Fellowship).map((f) => (
                     <button
-                      key={m.id}
-                      onClick={() => handleMemberSelect(m)}
-                      className="w-full text-left px-4 py-3 hover:bg-indigo-50 rounded-xl flex items-center justify-between group transition-colors mb-1"
+                      key={f}
+                      onClick={() => {
+                        setSelectedFellowship(f);
+                        setViewMode('BULK_ENTRY');
+                      }}
+                      className="p-4 rounded-xl border border-slate-100 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-200 hover:shadow-md transition-all group text-left relative overflow-hidden"
                     >
-                      <div className="flex items-center">
-                        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center mr-3 text-slate-400 group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
-                          <UserIcon className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-slate-800 group-hover:text-indigo-700">{m.name}</p>
-                          <p className="text-xs text-slate-400 font-medium">{m.phone}</p>
-                        </div>
+                      <div className="font-bold text-slate-700 group-hover:text-indigo-800 mb-1 z-10 relative">{f}</div>
+                      <div className="text-[10px] text-slate-400 font-medium group-hover:text-indigo-400 z-10 relative">{FELLOWSHIP_PASTORS[f]}</div>
+                      <div className="absolute right-2 bottom-2 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <Users className="w-8 h-8 text-indigo-500" />
                       </div>
-                      <span className="text-xs font-bold bg-slate-100 px-2.5 py-1 rounded-lg text-slate-500 group-hover:bg-white group-hover:shadow-sm">{m.fellowship}</span>
                     </button>
                   ))}
-                  {filteredMembers.length === 0 && (
-                    <div className="p-4">
-                      <div className="text-center text-slate-400 text-sm font-medium mb-3">No members found matching "{searchTerm}"</div>
-                      <button
-                        onClick={openQuickAdd}
-                        className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold flex items-center justify-center transition-colors shadow-lg shadow-indigo-200"
-                      >
-                        <UserPlus className="w-5 h-5 mr-2" />
-                        Add "{searchTerm}" as New Member
-                      </button>
-                    </div>
-                  )}
                 </div>
-              )}
-            </div>
-
-            {/* Quick Add Modal */}
-            {isAddMemberOpen && createPortal(
-              <div
-                className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in"
-                onClick={() => setIsAddMemberOpen(false)}
-              >
-                <div
-                  className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden relative"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="bg-[#1e1e2d] px-4 md:px-8 py-4 md:py-6 flex justify-between items-center">
-                    <h3 className="text-xl font-bold text-white">Add New Member</h3>
-                    <button onClick={() => setIsAddMemberOpen(false)} className="text-white/50 hover:text-white transition-colors">
-                      <X className="w-6 h-6" />
-                    </button>
-                  </div>
-
-                  <div className="p-4 md:p-8 space-y-6">
-                    <div>
-                      <label className="block text-sm font-bold text-slate-500 mb-2 uppercase tracking-wider">Full Name</label>
-                      <input
-                        type="text"
-                        value={newMemberName}
-                        onChange={(e) => setNewMemberName(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        autoFocus
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-bold text-slate-500 mb-2 uppercase tracking-wider">Phone Number</label>
-                      <input
-                        type="tel"
-                        value={newMemberPhone}
-                        onChange={(e) => setNewMemberPhone(e.target.value)}
-                        placeholder="024XXXXXXX"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-bold text-slate-500 mb-2 uppercase tracking-wider">Fellowship & Pastor</label>
-                      <div className="relative">
-                        <select
-                          value={newMemberFellowship}
-                          onChange={(e) => setNewMemberFellowship(e.target.value as Fellowship)}
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pr-10 font-bold text-slate-800 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        >
-                          {Object.values(Fellowship).map((f) => (
-                            <option key={f} value={f}>
-                              {f} - {FELLOWSHIP_PASTORS[f]}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                          <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                            <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="pt-4">
-                      <button
-                        onClick={handleQuickAdd}
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-[0.98]"
-                      >
-                        Save & Select Member
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>,
-              document.body
+              </div>
             )}
 
-            {/* 2. Amount Input */}
-            <div className="flex flex-col justify-center mb-4 md:mb-2 relative py-2 md:py-0">
-              <div className="absolute inset-0 bg-gradient-to-b from-indigo-50/30 to-transparent rounded-3xl -z-10 opacity-0 transition-opacity duration-500" style={{ opacity: selectedMember ? 1 : 0 }}></div>
-              <label className="block text-sm md:text-[10px] font-bold text-slate-500 mb-2 md:mb-1 text-center uppercase tracking-wider">2. Enter Amount</label>
-              <div className="flex items-center justify-center px-4 md:px-8">
-                <span className={`text-2xl md:text-3xl font-bold transition-colors duration-300 mr-1 md:mr-2 ${amount ? 'text-indigo-300' : 'text-slate-200'}`}>GH₵</span>
-                <input
-                  ref={amountInputRef}
-                  type="number"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-                  onWheel={(e) => (e.target as HTMLInputElement).blur()}
-                  className="flex-1 bg-transparent text-center text-4xl md:text-5xl font-black text-indigo-900 focus:outline-none placeholder-slate-200 drop-shadow-sm min-w-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none py-2 md:py-0"
-                  placeholder="0.00"
-                  disabled={!selectedMember}
-                />
+            {viewMode === 'BULK_ENTRY' && selectedFellowship && (
+              <div className="animate-fade-in flex-1 flex flex-col h-full overflow-hidden">
+                <div className="flex items-center justify-between mb-4 px-1">
+                  <button
+                    onClick={() => {
+                      if (Object.keys(bulkEntries).length > 0) {
+                        if (!window.confirm('Go back? Unsaved entries will be lost.')) return;
+                      }
+                      setBulkEntries({});
+                      setViewMode('FELLOWSHIP_SELECT');
+                    }}
+                    className="flex items-center text-slate-500 hover:text-indigo-600 text-xs font-bold transition-colors"
+                  >
+                    <ArrowLeft className="w-3 h-3 mr-1" /> Back
+                  </button>
+                  <div className="text-center">
+                    <h3 className="font-bold text-slate-800">{selectedFellowship}</h3>
+                    <span className="text-[10px] text-slate-400 font-bold bg-slate-100 px-2 py-0.5 rounded-full">{getMembersInFellowship().length} Active Members</span>
+                  </div>
+                  <div className="w-10"></div> {/* Spacer for centering */}
+                </div>
+
+                <div className="flex-1 overflow-y-auto pr-1 -mr-1 space-y-2 pb-20">
+                  {getMembersInFellowship().length === 0 ? (
+                    <div className="text-center py-10 text-slate-400 text-sm">No active members found.</div>
+                  ) : (
+                    getMembersInFellowship().map(member => (
+                      <div key={member.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                        <div className="flex-1">
+                          <div className="font-bold text-slate-700 text-sm">{member.name}</div>
+                          <div className="text-[10px] text-slate-400">{member.phone}</div>
+                        </div>
+                        <div className="relative w-32 md:w-40">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">GH₵</span>
+                          <input
+                            type="number"
+                            className="w-full bg-white border border-slate-200 rounded-lg py-2 pl-10 pr-3 text-right font-bold text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm"
+                            placeholder="0.00"
+                            value={bulkEntries[member.id] || ''}
+                            onChange={(e) => handleBulkAmountChange(member.id, e.target.value)}
+                            onWheel={(e) => (e.target as HTMLInputElement).blur()}
+                          />
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="absolute bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur border-t border-slate-100 z-20">
+                  <button
+                    onClick={submitBulkSession}
+                    className="w-full bg-slate-900 text-white font-bold py-3 rounded-xl shadow-lg shadow-indigo-200 hover:shadow-2xl hover:bg-slate-800 active:scale-[0.98] transition-all flex items-center justify-center text-sm"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload Session ({Object.keys(bulkEntries).filter(k => parseFloat(bulkEntries[k]) > 0).length})
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* 3. Method Selection */}
-            <div className="flex justify-center gap-2 md:gap-2 mb-6 md:mb-2 w-full">
-              {[PaymentMethod.CASH, PaymentMethod.MOMO].map((m) => (
-                <button
-                  key={m}
-                  onClick={() => setMethod(m)}
-                  className={`flex-1 py-3 md:py-2 rounded-xl md:rounded-lg font-bold text-xs md:text-[10px] transition-all relative overflow-hidden ${method === m
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-300 scale-105 ring-4 ring-indigo-50'
-                    : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:border-slate-300'
-                    }`}
-                >
-                  {method === m && <div className="absolute inset-0 bg-white/20"></div>}
-                  {m}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex justify-center w-full">
-              <button
-                onClick={() => handleSubmit()}
-                disabled={!selectedMember || !amount}
-                className="w-full md:w-56 bg-slate-900 text-white font-bold py-3.5 md:py-2.5 rounded-xl md:rounded-lg text-sm md:text-sm flex items-center justify-center shadow-xl shadow-slate-200 hover:shadow-2xl hover:shadow-indigo-900/20 hover:bg-indigo-900 active:scale-[0.98] transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none"
-              >
-                <Check className="w-5 h-5 md:w-5 md:h-5 mr-2" />
-                CONFIRM TRANSACTION
-              </button>
-            </div>
-
-            <p className="text-center text-xs text-slate-400 mt-6 font-medium">
-              Press <kbd className="bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 text-slate-500">ENTER</kbd> to submit • <kbd className="bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 text-slate-500">CTRL+Z</kbd> to undo
-            </p>
           </div>
         )}
       </div>

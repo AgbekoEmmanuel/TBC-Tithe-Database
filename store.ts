@@ -117,6 +117,7 @@ interface DataState {
   error: string | null;
   fetchData: () => Promise<void>;
   addTransaction: (txn: Transaction) => Promise<void>;
+  bulkAddTransactions: (txns: Transaction[]) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
   undoLastTransaction: () => void;
   updateBatchStatus: (status: Batch['status']) => Promise<void>;
@@ -238,6 +239,64 @@ export const useDataStore = create<DataState>((set, get) => ({
           ytd_total: member.ytdTotal
         }).eq('id', member.id);
       }
+    }
+  },
+
+  bulkAddTransactions: async (txns) => {
+    if (txns.length === 0) return;
+
+    // Optimistic Update
+    set((state) => {
+      const newTxns = [...txns, ...state.transactions];
+      // Update member totals map for O(1) lookups
+      const totalsMap = new Map<string, number>();
+      txns.forEach(t => {
+        totalsMap.set(t.memberId, (totalsMap.get(t.memberId) || 0) + t.amount);
+      });
+
+      return {
+        transactions: newTxns,
+        members: state.members.map(m => {
+          const addedAmount = totalsMap.get(m.id);
+          return addedAmount ? { ...m, ytdTotal: (m.ytdTotal || 0) + addedAmount } : m;
+        })
+      };
+    });
+
+    // DB Insert
+    const dbTxns = txns.map(txn => ({
+      id: txn.id,
+      batch_id: txn.batchId,
+      member_id: txn.memberId,
+      amount: txn.amount,
+      method: txn.method,
+      timestamp: txn.timestamp,
+      officer_id: txn.officerId,
+      officer_name: txn.officerName,
+      member_name: txn.memberName,
+      fellowship: txn.fellowship
+    }));
+
+    const { error } = await supabase.from('transactions').insert(dbTxns);
+
+    if (error) {
+      console.error('Error adding bulk transactions:', error);
+      // Revert logic would go here (fetchData)
+      await get().fetchData();
+    } else {
+      // Update member totals in DB
+      const uniqueMemberIds = [...new Set(txns.map(t => t.memberId))];
+
+      const memberUpdates = uniqueMemberIds.map(async (memberId) => {
+        const member = get().members.find(m => m.id === memberId);
+        if (member) {
+          return supabase.from('members').update({
+            ytd_total: member.ytdTotal
+          }).eq('id', memberId);
+        }
+      });
+
+      await Promise.all(memberUpdates);
     }
   },
 
