@@ -2,11 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useDataStore, useAuthStore } from '../store';
 import { PaymentMethod, Transaction, Fellowship, FELLOWSHIP_PASTORS, Role } from '../types';
 import { getSundayDate } from '../lib/dateUtils';
-import { Calendar, Trash2, Filter, Play, Power, ArrowLeft, Upload, Users } from 'lucide-react';
+import { Calendar, Trash2, Filter, Play, Power, ArrowLeft, Upload, Users, X, UserPlus } from 'lucide-react';
 
 
 export const Entry: React.FC = () => {
-  const { members, transactions, activeBatchId, bulkAddTransactions, deleteTransaction } = useDataStore();
+  const { members, transactions, activeBatchId, bulkAddTransactions, deleteTransaction, addMember } = useDataStore();
   const { user } = useAuthStore();
 
   // Session State
@@ -59,6 +59,12 @@ export const Entry: React.FC = () => {
     };
   }, [filterWrapperRef]);
 
+  // Add Member State
+  const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
+  const [newMemberName, setNewMemberName] = useState('');
+  const [newMemberPhone, setNewMemberPhone] = useState('');
+  const [isAddingMember, setIsAddingMember] = useState(false);
+
   // Bulk Entry Logic
   const getMembersInFellowship = () => {
     return members.filter(m => m.fellowship === selectedFellowship && m.status === 'ACTIVE');
@@ -69,6 +75,29 @@ export const Entry: React.FC = () => {
       ...prev,
       [memberId]: value
     }));
+  };
+
+  const handleAddMember = async () => {
+    if (!newMemberName.trim() || !selectedFellowship) return;
+    setIsAddingMember(true);
+
+    try {
+      await addMember({
+        name: newMemberName,
+        phone: newMemberPhone,
+        fellowship: selectedFellowship
+      });
+
+      // Reset and Close
+      setNewMemberName('');
+      setNewMemberPhone('');
+      setIsAddMemberOpen(false);
+    } catch (error) {
+      console.error(error);
+      alert('Failed to add member');
+    } finally {
+      setIsAddingMember(false);
+    }
   };
 
   const submitBulkSession = async () => {
@@ -314,18 +343,32 @@ export const Entry: React.FC = () => {
             {viewMode === 'BULK_ENTRY' && selectedFellowship && (
               <div className="animate-fade-in flex-1 flex flex-col h-full overflow-hidden">
                 <div className="flex items-center justify-between mb-4 px-1">
-                  <button
-                    onClick={() => {
-                      if (Object.keys(bulkEntries).length > 0) {
-                        if (!window.confirm('Go back? Unsaved entries will be lost.')) return;
-                      }
-                      setBulkEntries({});
-                      setViewMode('FELLOWSHIP_SELECT');
-                    }}
-                    className="flex items-center text-slate-500 hover:text-indigo-600 text-xs font-bold transition-colors"
-                  >
-                    <ArrowLeft className="w-3 h-3 mr-1" /> Back
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        if (Object.keys(bulkEntries).length > 0) {
+                          if (!window.confirm('Go back? Unsaved entries will be lost.')) return;
+                        }
+                        setBulkEntries({});
+                        setViewMode('FELLOWSHIP_SELECT');
+                      }}
+                      className="flex items-center text-slate-500 hover:text-indigo-600 text-xs font-bold transition-colors"
+                    >
+                      <ArrowLeft className="w-3 h-3 mr-1" /> Back
+                    </button>
+                    <div className="h-4 w-px bg-slate-300 mx-1"></div>
+                    <button
+                      onClick={() => {
+                        setNewMemberName('');
+                        setNewMemberPhone('');
+                        setIsAddMemberOpen(true);
+                      }}
+                      className="flex items-center text-indigo-600 hover:text-indigo-700 text-xs font-bold transition-colors bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded-lg"
+                    >
+                      <UserPlus className="w-3 h-3 mr-1" /> Add Member
+                    </button>
+                  </div>
+
                   <div className="text-center">
                     <h3 className="font-bold text-slate-800">{selectedFellowship}</h3>
                     <span className="text-[10px] text-slate-400 font-bold bg-slate-100 px-2 py-0.5 rounded-full">{getMembersInFellowship().length} Active Members</span>
@@ -335,7 +378,15 @@ export const Entry: React.FC = () => {
 
                 <div className="flex-1 overflow-y-auto pr-1 -mr-1 space-y-2 pb-20">
                   {getMembersInFellowship().length === 0 ? (
-                    <div className="text-center py-10 text-slate-400 text-sm">No active members found.</div>
+                    <div className="text-center py-10 text-slate-400 text-sm">
+                      No active members found. <br />
+                      <button
+                        onClick={() => setIsAddMemberOpen(true)}
+                        className="text-indigo-600 font-bold hover:underline mt-2 text-xs"
+                      >
+                        Add the first member
+                      </button>
+                    </div>
                   ) : (
                     getMembersInFellowship().map(member => (
                       <div key={member.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
@@ -352,6 +403,12 @@ export const Entry: React.FC = () => {
                             value={bulkEntries[member.id] || ''}
                             onChange={(e) => handleBulkAmountChange(member.id, e.target.value)}
                             onWheel={(e) => (e.target as HTMLInputElement).blur()}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                // Logic to move to next input could exist here, or just blur
+                                (e.target as HTMLInputElement).blur();
+                              }
+                            }}
                           />
                         </div>
                       </div>
@@ -371,8 +428,76 @@ export const Entry: React.FC = () => {
               </div>
             )}
 
+            {/* Add Member Modal */}
+            {isAddMemberOpen && (
+              <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+                  <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                    <h3 className="font-bold text-slate-800">Add New Member</h3>
+                    <button
+                      onClick={() => setIsAddMemberOpen(false)}
+                      className="p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <div className="p-4 space-y-4">
+                    <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-3 flex items-start">
+                      <Users className="w-4 h-4 text-indigo-600 mt-0.5 mr-2 shrink-0" />
+                      <div>
+                        <p className="text-xs font-bold text-indigo-900">Auto-Assigning to {selectedFellowship}</p>
+                        <p className="text-[10px] text-indigo-700/80">New member will be added to the current list instantly.</p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Full Name</label>
+                      <input
+                        autoFocus
+                        type="text"
+                        value={newMemberName}
+                        onChange={(e) => setNewMemberName(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="e.g. John Doe"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Phone Number</label>
+                      <input
+                        type="tel"
+                        value={newMemberPhone}
+                        onChange={(e) => setNewMemberPhone(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="e.g. 0244123456"
+                      />
+                    </div>
+
+                    <div className="pt-2">
+                      <button
+                        onClick={handleAddMember}
+                        disabled={!newMemberName.trim() || isAddingMember}
+                        className="w-full bg-indigo-600 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:scale-[0.98] transition-all flex items-center justify-center"
+                      >
+                        {isAddingMember ? (
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            <UserPlus className="w-4 h-4 mr-2" />
+                            Add & Return to List
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
+
+
       </div>
 
 
@@ -628,6 +753,6 @@ export const Entry: React.FC = () => {
           )}
         </div>
       </div>
-    </div>
+    </div >
   );
 };
