@@ -118,7 +118,7 @@ export const generatePDFReport = async (
         const imgProps = doc.getImageProperties(logoUrl);
         const imgWidth = 35;
         const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
-        doc.addImage(logoUrl, 'PNG', 14, 10, imgWidth, imgHeight);
+        doc.addImage(logoUrl, 'PNG', 14, 25, imgWidth, imgHeight);
     } catch (e) {
         console.warn("Could not add logo", e);
     }
@@ -129,19 +129,19 @@ export const generatePDFReport = async (
     // "The Tithe Department"
     doc.setFontSize(10);
     doc.setFont(titleFont, 'bold');
-    doc.text('The Tithe Department', 105, 18, { align: 'center' });
+    doc.text('The Tithe Department', 105, 33, { align: 'center' });
 
     // "FINANCIAL REPORT"
     doc.setFontSize(24);
     doc.setFont(titleFont, 'bold');
-    doc.text('FINANCIAL REPORT', 105, 28, { align: 'center' });
+    doc.text('FINANCIAL REPORT', 105, 43, { align: 'center' });
 
     // Period Subtitle
     doc.setFontSize(12);
     doc.setTextColor(100, 116, 139); // Slate 500
     doc.setFont(titleFont, 'normal');
     const periodText = `${period.month} ${period.year} ${period.week !== 'All' ? '- Week ' + period.week : '- Monthly Summary'}`;
-    doc.text(periodText.toUpperCase(), 105, 36, { align: 'center' });
+    doc.text(periodText.toUpperCase(), 105, 51, { align: 'center' });
 
     // --- 4. Fellowship Breakdown Table (First) ---
     const fellowshipTableData = fellowshipArr.map(f => [
@@ -153,7 +153,7 @@ export const generatePDFReport = async (
     fellowshipTableData.push(['TOTAL', `GHS ${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`]);
 
     autoTable(doc, {
-        startY: 45,
+        startY: 65,
         head: [['FELLOWSHIP', 'AMOUNT']],
         body: fellowshipTableData,
         headStyles: {

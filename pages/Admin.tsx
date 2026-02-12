@@ -166,8 +166,8 @@ export const Admin: React.FC = () => {
             {/* Universal Header */}
             <div className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                 <div>
-                    <h1 className="text-2xl font-black text-slate-800 tracking-tight">System Administration</h1>
-                    <p className="text-slate-500 font-medium">Manage users, import historical data, and export records.</p>
+                    <h1 className="text-xl font-bold text-slate-800 tracking-tight">System Administration</h1>
+                    <p className="text-slate-500 font-medium mt-1 text-xs">Manage users, import historical data, and export records.</p>
                 </div>
                 <div className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg font-bold text-sm border border-indigo-100 uppercase tracking-wider">
                     {user?.role} ACCESS

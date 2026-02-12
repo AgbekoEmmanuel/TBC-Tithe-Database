@@ -280,8 +280,8 @@ export const Analytics: React.FC = () => {
 
       <div className="flex justify-between items-center mb-4 md:mb-8">
         <div>
-          <h2 className="text-lg md:text-3xl font-bold text-slate-800 tracking-tight">Financial Analytics</h2>
-          <p className="text-slate-500 font-medium mt-0.5 md:mt-1 text-xs md:text-base">Deep dive into financial metrics</p>
+          <h2 className="text-xl font-bold text-slate-800 tracking-tight">Financial Analytics</h2>
+          <p className="text-slate-500 font-medium mt-1 text-xs">Deep dive into financial metrics</p>
         </div>
         <div className="flex space-x-3">
           <button
