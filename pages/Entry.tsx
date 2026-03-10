@@ -20,6 +20,7 @@ export const Entry: React.FC = () => {
   const [viewMode, setViewMode] = useState<'FELLOWSHIP_SELECT' | 'BULK_ENTRY'>('FELLOWSHIP_SELECT');
   const [selectedFellowship, setSelectedFellowship] = useState<Fellowship | null>(null);
   const [bulkEntries, setBulkEntries] = useState<Record<string, string>>({}); // MemberId -> Amount (string for input handling)
+  const [bulkMethods, setBulkMethods] = useState<Record<string, PaymentMethod>>({}); // MemberId -> PaymentMethod
 
   // Filtering & Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -78,6 +79,13 @@ export const Entry: React.FC = () => {
     }));
   };
 
+  const handleMethodToggle = (memberId: string, method: PaymentMethod) => {
+    setBulkMethods(prev => ({
+      ...prev,
+      [memberId]: method
+    }));
+  };
+
   const handleAddMember = async () => {
     if (!newMemberName.trim() || !selectedFellowship) return;
     setIsAddingMember(true);
@@ -123,7 +131,7 @@ export const Entry: React.FC = () => {
             memberName: member.name,
             fellowship: member.fellowship,
             amount: amount,
-            method: PaymentMethod.CASH,
+            method: bulkMethods[id] || PaymentMethod.CASH,
             timestamp: timestamp,
             officerId: user?.id || 'sys',
             officerName: user?.name || 'Admin Entry'
@@ -138,6 +146,7 @@ export const Entry: React.FC = () => {
         alert(`Successfully saved ${entriesToSubmit.length} transactions!`);
         // Keeping data visible on the screen, just reset the input fields
         setBulkEntries({});
+        setBulkMethods({});
       } catch (err: any) {
         alert(err.message || 'Failed to save transactions to the database.');
       }
@@ -436,23 +445,55 @@ export const Entry: React.FC = () => {
                     </div>
                   ) : (
                     getMembersInFellowship().map(member => (
-                      <div key={member.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
-                        <div className="flex-1">
-                          <div className="font-bold text-slate-700 text-sm">{member.name}</div>
+                      <div key={member.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="font-bold text-slate-700 text-sm truncate">{member.name}</div>
                           <div className="text-[10px] text-slate-400">{member.phone}</div>
                         </div>
-                        <div className="relative w-32 md:w-40">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">GH₵</span>
+                        {/* Payment Method Toggle */}
+                        <div className="flex gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleMethodToggle(member.id, PaymentMethod.CASH)}
+                            className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all border ${
+                              bulkMethods[member.id] === PaymentMethod.CASH
+                                ? 'bg-emerald-500 text-white border-emerald-400 shadow-sm'
+                                : 'bg-white text-slate-400 border-slate-200 hover:border-emerald-300 hover:text-emerald-600'
+                            }`}
+                          >
+                            Cash
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleMethodToggle(member.id, PaymentMethod.MOMO)}
+                            className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all border ${
+                              bulkMethods[member.id] === PaymentMethod.MOMO
+                                ? 'bg-amber-500 text-white border-amber-400 shadow-sm'
+                                : 'bg-white text-slate-400 border-slate-200 hover:border-amber-300 hover:text-amber-600'
+                            }`}
+                          >
+                            MoMo
+                          </button>
+                        </div>
+                        {/* Amount Input */}
+                        <div className="relative w-28 md:w-36 shrink-0">
+                          <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold ${
+                            bulkMethods[member.id] ? 'text-slate-400' : 'text-slate-300'
+                          }`}>GH₵</span>
                           <input
                             type="number"
-                            className="w-full bg-white border border-slate-200 rounded-lg py-2 pl-10 pr-3 text-right font-bold text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm"
-                            placeholder="0.00"
+                            disabled={!bulkMethods[member.id]}
+                            className={`w-full border rounded-lg py-2 pl-10 pr-3 text-right font-bold text-sm transition-all ${
+                              bulkMethods[member.id]
+                                ? 'bg-white border-slate-200 text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-text'
+                                : 'bg-slate-100 border-slate-100 text-slate-300 cursor-not-allowed'
+                            }`}
+                            placeholder={bulkMethods[member.id] ? '0.00' : 'Select method'}
                             value={bulkEntries[member.id] || ''}
                             onChange={(e) => handleBulkAmountChange(member.id, e.target.value)}
                             onWheel={(e) => (e.target as HTMLInputElement).blur()}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') {
-                                // Logic to move to next input could exist here, or just blur
                                 (e.target as HTMLInputElement).blur();
                               }
                             }}
