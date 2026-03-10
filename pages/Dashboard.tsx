@@ -211,20 +211,18 @@ export const Dashboard: React.FC = () => {
               <table className="w-full min-w-[700px]">
                 <thead>
                   <tr className="text-left text-xs font-semibold text-gray-400 border-b border-gray-100">
-                    <th className="px-3 py-3 whitespace-nowrap">ID</th>
+                    <th className="px-3 py-3 whitespace-nowrap">Member</th>
                     <th className="px-3 py-3 whitespace-nowrap">Date</th>
                     <th className="px-3 py-3 whitespace-nowrap">Fellowship</th>
                     <th className="px-3 py-3 whitespace-nowrap">Method</th>
-                    <th className="px-3 py-3 whitespace-nowrap">Member</th>
+                    <th className="px-3 py-3 whitespace-nowrap">ID</th>
                     <th className="px-3 py-3 text-right whitespace-nowrap">Amount</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {transactions.slice(0, 5).map((txn, i) => (
                     <tr key={txn.id} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="px-3 py-3">
-                        <span className="font-bold text-gray-700 text-xs whitespace-nowrap">{txn.id.slice(-6)}</span>
-                      </td>
+                      <td className="px-3 py-3 text-xs font-bold text-gray-700 whitespace-nowrap max-w-[200px] truncate" title={txn.memberName}>{txn.memberName}</td>
                       <td className="px-3 py-3 text-xs font-semibold text-gray-600 whitespace-nowrap">
                         {new Date(txn.timestamp).toLocaleDateString()}
                       </td>
@@ -232,7 +230,7 @@ export const Dashboard: React.FC = () => {
                         {txn.fellowship}
                       </td>
                       <td className="px-3 py-3 text-xs font-semibold text-gray-600 whitespace-nowrap">{txn.method}</td>
-                      <td className="px-3 py-3 text-xs font-bold text-gray-700 whitespace-nowrap max-w-[200px] truncate" title={txn.memberName}>{txn.memberName}</td>
+                      <td className="px-3 py-3 text-xs font-bold text-gray-400 whitespace-nowrap">{txn.id.slice(-6)}</td>
                       <td className="px-3 py-3 text-right text-emerald-500 font-bold whitespace-nowrap">GH₵{txn.amount.toLocaleString()}</td>
                     </tr>
                   ))}
