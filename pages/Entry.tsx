@@ -330,10 +330,11 @@ export const Entry: React.FC = () => {
                 </div>
               </div>
               <div className="flex items-center space-x-2">
-                {viewMode === 'BULK_ENTRY' && Object.keys(bulkEntries).length > 0 && (
+                {viewMode === 'BULK_ENTRY' && (
                   <button
                     onClick={submitBulkSession}
-                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg shadow-sm hover:shadow-md transition-all flex items-center text-xs md:text-sm animate-fade-in"
+                    disabled={Object.keys(bulkEntries).filter(k => parseFloat(bulkEntries[k]) > 0).length === 0}
+                    className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-2 px-4 rounded-lg shadow-sm hover:shadow-md transition-all flex items-center text-xs md:text-sm animate-fade-in"
                   >
                     <Upload className="w-4 h-4 mr-2" />
                     Upload ({Object.keys(bulkEntries).filter(k => parseFloat(bulkEntries[k]) > 0).length})
@@ -550,20 +551,20 @@ export const Entry: React.FC = () => {
           <div className="flex space-x-2 mr-2 z-30">
             <button
               onClick={exportToCSV}
-              className="flex items-center space-x-2 px-3 md:px-3 py-2 md:py-2 rounded-xl font-bold transition-all shadow-sm border bg-white text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+              className="flex items-center space-x-1 px-2 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm border bg-white text-emerald-600 border-emerald-200 hover:bg-emerald-50"
             >
-              <Download className="w-4 h-4" />
+              <Download className="w-3.5 h-3.5" />
               <span className="hidden md:inline">Export CSV</span>
             </button>
             <div className="relative" ref={filterWrapperRef}>
               <button
                 onClick={handleOpenFilter}
-                className={`flex items-center space-x-2 px-3 md:px-3 py-2 md:py-2 rounded-xl font-bold transition-all shadow-sm border ${isFilterOpen || appliedFilters.method !== 'ALL' || appliedFilters.fellowship !== 'ALL' || appliedFilters.min || appliedFilters.max || appliedFilters.startDate || appliedFilters.endDate
+                className={`flex items-center space-x-1 px-2 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm border ${isFilterOpen || appliedFilters.method !== 'ALL' || appliedFilters.fellowship !== 'ALL' || appliedFilters.min || appliedFilters.max || appliedFilters.startDate || appliedFilters.endDate
                   ? 'bg-indigo-600 text-white border-indigo-500 shadow-indigo-200'
                   : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                   }`}
               >
-                <Filter className="w-4 h-4" />
+                <Filter className="w-3.5 h-3.5" />
                 <span className="hidden md:inline">Filter Transactions</span>
                 <span className="md:hidden">Filter</span>
               </button>
@@ -689,7 +690,7 @@ export const Entry: React.FC = () => {
               {transactions.length} Records
             </span>
           </div>
-          <div className="w-full overflow-x-auto flex-1 p-1 md:p-2 pb-4 visible-scrollbar">
+          <div className="w-full overflow-x-auto flex-1 p-1 md:p-2 pb-4">
             <table className="w-full border-separate border-spacing-y-1">
               <thead className="sticky top-0 z-10">
                 <tr className="text-left text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider">
@@ -702,7 +703,7 @@ export const Entry: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {currentTransactions.map((txn) => (
+                {filteredTransactions.map((txn) => (
                   <tr key={txn.id} className="hover:bg-white/60 transition-colors group">
                     <td className="px-3 md:px-4 py-2 md:py-2 text-slate-500 font-mono text-[10px] md:text-xs font-medium rounded-l-xl border-l-4 border-transparent hover:border-indigo-400">
                       {new Date(txn.timestamp).toLocaleDateString()}
@@ -748,52 +749,6 @@ export const Entry: React.FC = () => {
               </tbody>
             </table>
           </div>
-
-          {/* Pagination Controls */}
-          {totalPages > 0 && (
-            <div className="p-6 border-t border-slate-100 flex justify-between items-center text-sm font-medium">
-              <span className="text-slate-400 text-xs md:text-sm">
-                Showing <span className="font-bold text-indigo-900">{Math.min((currentPage - 1) * itemsPerPage + 1, filteredTransactions.length)}</span>-<span className="font-bold text-indigo-900">{Math.min(currentPage * itemsPerPage, filteredTransactions.length)}</span> of <span className="font-bold text-indigo-900">{filteredTransactions.length}</span>
-              </span>
-
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-500 font-bold hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
-                >
-                  Previous
-                </button>
-
-                <div className="flex space-x-1">
-                  {getPageNumbers().map((page, idx) => (
-                    typeof page === 'number' ? (
-                      <button
-                        key={idx}
-                        onClick={() => setCurrentPage(page)}
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold transition-all shadow-sm ${currentPage === page
-                          ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-300 transform scale-105'
-                          : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 text-slate-600'
-                          }`}
-                      >
-                        {page}
-                      </button>
-                    ) : (
-                      <span key={idx} className="w-10 h-10 flex items-center justify-center text-slate-400 font-bold pb-2">...</span>
-                    )
-                  ))}
-                </div>
-
-                <button
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                  className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-500 font-bold hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div >
