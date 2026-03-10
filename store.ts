@@ -113,8 +113,10 @@ interface DataState {
   transactions: Transaction[];
   batches: Batch[];
   activeBatchId: string;
+  selectedYear: number;
   isLoading: boolean;
   error: string | null;
+  setSelectedYear: (year: number) => void;
   fetchData: () => Promise<void>;
   addTransaction: (txn: Transaction) => Promise<void>;
   bulkAddTransactions: (txns: Transaction[]) => Promise<void>;
@@ -132,15 +134,26 @@ export const useDataStore = create<DataState>((set, get) => ({
   transactions: [],
   batches: [],
   activeBatchId: 'BATCH-CURRENT', // Default ID until loaded
+  selectedYear: new Date().getFullYear(),
   isLoading: false,
   error: null,
+
+  setSelectedYear: (year: number) => {
+    set({ selectedYear: year });
+    get().fetchData();
+  },
 
   fetchData: async () => {
     set({ isLoading: true, error: null });
     try {
+      const year = get().selectedYear;
       const [membersRes, txnsRes, batchesRes] = await Promise.all([
         supabase.from('members').select('*').order('name'),
-        supabase.from('transactions').select('*').order('timestamp', { ascending: false }),
+        supabase.from('transactions')
+          .select('*')
+          .gte('timestamp', `${year}-01-01T00:00:00Z`)
+          .lt('timestamp', `${year + 1}-01-01T00:00:00Z`)
+          .order('timestamp', { ascending: false }),
         supabase.from('batches').select('*').order('date', { ascending: false })
       ]);
 
@@ -149,26 +162,29 @@ export const useDataStore = create<DataState>((set, get) => ({
       if (batchesRes.error) throw batchesRes.error;
 
       // Ensure we have an active batch
-      let batches = batchesRes.data as Batch[];
+      let rawBatches = batchesRes.data || [];
       let activeBatchId = 'BATCH-CURRENT';
 
-      const openBatch = batches.find(b => b.status === 'OPEN' || b.status === 'COUNTING');
+      const openBatch = rawBatches.find(b => b.status === 'OPEN' || b.status === 'COUNTING');
       if (openBatch) {
         activeBatchId = openBatch.id;
-      } else if (batches.length === 0) {
+      } else {
         // Create initial batch if none exists
-        const newBatch: Batch = {
-          id: `BATCH-${Date.now()}`,
+        const newBatchId = `BATCH-${Date.now()}`;
+        const newDbBatch = {
+          id: newBatchId,
           date: new Date().toISOString(),
           status: 'OPEN',
-          totalSystem: 0,
-          totalCash: 0,
+          total_system: 0,
+          total_cash: 0,
           variance: 0
         };
-        const { error } = await supabase.from('batches').insert(newBatch);
+        const { error } = await supabase.from('batches').insert(newDbBatch);
         if (!error) {
-          batches = [newBatch];
-          activeBatchId = newBatch.id;
+          rawBatches = [newDbBatch, ...rawBatches];
+          activeBatchId = newBatchId;
+        } else {
+          console.error("Error creating initial batch:", error);
         }
       }
 
@@ -185,7 +201,7 @@ export const useDataStore = create<DataState>((set, get) => ({
           officerId: t.officer_id,
           officerName: t.officer_name,
         })) as Transaction[],
-        batches: (batchesRes.data || []).map((b: any) => ({
+        batches: rawBatches.map((b: any) => ({
           ...b,
           totalSystem: b.total_system,
           totalCash: b.total_cash,
@@ -222,7 +238,6 @@ export const useDataStore = create<DataState>((set, get) => ({
       method: txn.method,
       timestamp: txn.timestamp,
       officer_id: txn.officerId,
-      officer_name: txn.officerName,
       member_name: txn.memberName,
       fellowship: txn.fellowship
     };
@@ -272,7 +287,6 @@ export const useDataStore = create<DataState>((set, get) => ({
       method: txn.method,
       timestamp: txn.timestamp,
       officer_id: txn.officerId,
-      officer_name: txn.officerName,
       member_name: txn.memberName,
       fellowship: txn.fellowship
     }));
@@ -283,6 +297,7 @@ export const useDataStore = create<DataState>((set, get) => ({
       console.error('Error adding bulk transactions:', error);
       // Revert logic would go here (fetchData)
       await get().fetchData();
+      throw new Error(`Database Error: ${error.message}`);
     } else {
       // Update member totals in DB
       const uniqueMemberIds = [...new Set(txns.map(t => t.memberId))];

@@ -8,9 +8,8 @@ import { Member, Transaction } from '../types';
 
 export const Admin: React.FC = () => {
     const { user } = useAuthStore();
-    const { importData, isLoading } = useDataStore();
+    const { importData, isLoading, selectedYear, setSelectedYear } = useDataStore();
     const [file, setFile] = useState<File | null>(null);
-    const [year, setYear] = useState('2025');
     const [preview, setPreview] = useState<{ members: Member[], transactions: Transaction[], warnings: string[] } | null>(null);
     const [importStatus, setImportStatus] = useState<'IDLE' | 'SUCCESS' | 'ERROR'>('IDLE');
     const [errorMessage, setErrorMessage] = useState('');
@@ -87,7 +86,7 @@ export const Admin: React.FC = () => {
     const handlePreview = async () => {
         if (!file) return;
         try {
-            const data = await parseExcelData(file, year);
+            const data = await parseExcelData(file, selectedYear.toString());
             setPreview(data);
         } catch (err: any) {
             setErrorMessage(err.message);
@@ -455,12 +454,15 @@ export const Admin: React.FC = () => {
                             <div>
                                 <label className="block text-sm font-bold text-slate-500 mb-2 uppercase tracking-wider">1. Select Fiscal Year</label>
                                 <select
-                                    value={year}
-                                    onChange={(e) => setYear(e.target.value)}
+                                    value={selectedYear.toString()}
+                                    onChange={(e) => setSelectedYear(parseInt(e.target.value))}
                                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                 >
+                                    <option value="2024">2024</option>
                                     <option value="2025">2025</option>
                                     <option value="2026">2026</option>
+                                    <option value="2027">2027</option>
+                                    <option value="2028">2028</option>
                                 </select>
                                 <p className="text-xs text-slate-400 mt-2">Determines the year for the imported dates.</p>
                             </div>
@@ -583,8 +585,8 @@ export const Admin: React.FC = () => {
                     <button
                         onClick={() => {
                             // Fetch freshest data from store state
-                            const { members, transactions } = useDataStore.getState();
-                            exportToExcel(members, transactions, year);
+                            const { members, transactions, selectedYear } = useDataStore.getState();
+                            exportToExcel(members, transactions, selectedYear.toString());
                         }}
                         className="bg-blue-600 text-white font-bold py-4 px-8 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 flex items-center whitespace-nowrap"
                     >

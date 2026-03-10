@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RePie, Pie, Cell, Legend } from 'recharts';
 import { Download, Printer } from 'lucide-react';
@@ -11,11 +11,18 @@ export const Analytics: React.FC = () => {
   const YEARS = ['2024', '2025', '2026'];
   const FELLOWSHIPS = Object.values(Fellowship);
 
-  const { transactions } = useDataStore();
+  const { transactions, selectedYear, setSelectedYear } = useDataStore();
 
-  const [trendFilter, setTrendFilter] = useState<{ year: string; month: string; week: WeekOption }>({ year: '2025', month: 'Jan', week: 'All' });
-  const [distFilter, setDistFilter] = useState<{ year: string; month: string; week: WeekOption }>({ year: '2025', month: 'Jan', week: 'All' });
-  const [fellowshipFilter, setFellowshipFilter] = useState<{ year: string; month: string; week: WeekOption }>({ year: '2025', month: 'Jan', week: 'All' });
+  const [trendFilter, setTrendFilter] = useState<{ year: string; month: string; week: WeekOption }>({ year: selectedYear.toString(), month: 'Jan', week: 'All' });
+  const [distFilter, setDistFilter] = useState<{ year: string; month: string; week: WeekOption }>({ year: selectedYear.toString(), month: 'Jan', week: 'All' });
+  const [fellowshipFilter, setFellowshipFilter] = useState<{ year: string; month: string; week: WeekOption }>({ year: selectedYear.toString(), month: 'Jan', week: 'All' });
+
+  useEffect(() => {
+    setTrendFilter(prev => ({ ...prev, year: selectedYear.toString() }));
+    setDistFilter(prev => ({ ...prev, year: selectedYear.toString() }));
+    setFellowshipFilter(prev => ({ ...prev, year: selectedYear.toString() }));
+    setReportFilter(prev => ({ ...prev, year: selectedYear.toString() }));
+  }, [selectedYear]);
 
   // Import Logo for Report
   // We need to use the imported path. For jspdf valid types, we can pass the URL usually if it's served.
@@ -135,10 +142,15 @@ export const Analytics: React.FC = () => {
     <div className={`p-1 rounded-xl flex items-center space-x-1 ${dark ? 'bg-[#ffffff10] border border-white/10' : 'bg-white border border-slate-100 shadow-sm'}`}>
       <select
         value={value.year}
-        onChange={(e) => onChange({ ...value, year: e.target.value })}
+        onChange={(e) => {
+          onChange({ ...value, year: e.target.value });
+          if (e.target.value !== selectedYear.toString()) setSelectedYear(parseInt(e.target.value));
+        }}
         className={`bg-transparent text-xs font-bold focus:outline-none cursor-pointer px-2 py-1 ${dark ? 'text-white' : 'text-slate-600'} appearance-none`}
       >
         {YEARS.map(y => <option key={y} value={y} className="text-slate-900">{y}</option>)}
+        <option value="2027" className="text-slate-900">2027</option>
+        <option value="2028" className="text-slate-900">2028</option>
       </select>
       <div className={`w-[1px] h-3 ${dark ? 'bg-white/20' : 'bg-slate-200'}`}></div>
       <select
@@ -154,7 +166,7 @@ export const Analytics: React.FC = () => {
 
   // --- Report Generation State & Handler ---
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-  const [reportFilter, setReportFilter] = useState<{ year: string; month: string; week: WeekOption }>({ year: '2025', month: 'Jan', week: 'All' });
+  const [reportFilter, setReportFilter] = useState<{ year: string; month: string; week: WeekOption }>({ year: selectedYear.toString(), month: 'Jan', week: 'All' });
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleGenerateReport = async () => {
@@ -222,10 +234,15 @@ export const Analytics: React.FC = () => {
                 <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Year</label>
                 <select
                   value={reportFilter.year}
-                  onChange={(e) => setReportFilter({ ...reportFilter, year: e.target.value })}
+                  onChange={(e) => {
+                    setReportFilter({ ...reportFilter, year: e.target.value });
+                    if (e.target.value !== selectedYear.toString()) setSelectedYear(parseInt(e.target.value));
+                  }}
                   className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700"
                 >
                   {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                  <option value="2027">2027</option>
+                  <option value="2028">2028</option>
                 </select>
               </div>
 

@@ -25,19 +25,24 @@ import {
 import { getFellowshipColorHex } from '../lib/fellowshipColors';
 
 export const Dashboard: React.FC = () => {
-  const { transactions, members } = useDataStore();
+  const { transactions, members, selectedYear, setSelectedYear } = useDataStore();
 
   const YEARS = ['2024', '2025', '2026'];
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-  const [velocityFilter, setVelocityFilter] = React.useState<{ month: string; year: string }>({ month: 'Jan', year: '2025' });
-  const [fellowshipFilter, setFellowshipFilter] = React.useState<{ month: string; year: string }>({ month: 'Jan', year: '2025' });
-  const [overviewYear, setOverviewYear] = React.useState<string>('2025');
+  const [velocityFilter, setVelocityFilter] = React.useState<{ month: string; year: string }>({ month: 'Jan', year: selectedYear.toString() });
+  const [fellowshipFilter, setFellowshipFilter] = React.useState<{ month: string; year: string }>({ month: 'Jan', year: selectedYear.toString() });
+
+  React.useEffect(() => {
+    setVelocityFilter(prev => ({ ...prev, year: selectedYear.toString() }));
+    setFellowshipFilter(prev => ({ ...prev, year: selectedYear.toString() }));
+  }, [selectedYear]);
 
   // Filter transactions for Financial Overview based on selected year
+  // (Not strictly needed anymore if transactions are already filtered, but okay to keep for safety)
   const overviewTransactions = transactions.filter(t => {
     const d = new Date(t.timestamp);
-    return d.getFullYear() === parseInt(overviewYear);
+    return d.getFullYear() === selectedYear;
   });
 
   const totalAmount = overviewTransactions.reduce((acc, t) => acc + t.amount, 0);
@@ -148,8 +153,8 @@ export const Dashboard: React.FC = () => {
             <h2 className="text-xl font-bold text-[#1e1e2d]">Financial Overview</h2>
             <div className="bg-white p-1 rounded-xl shadow-sm border border-slate-100 flex items-center">
               <select
-                value={overviewYear}
-                onChange={(e) => setOverviewYear(e.target.value)}
+                value={selectedYear.toString()}
+                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
                 className="bg-transparent text-xs font-bold text-slate-600 focus:outline-none cursor-pointer px-2"
               >
                 {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
@@ -241,7 +246,10 @@ export const Dashboard: React.FC = () => {
         <div className="xl:w-1/2 flex flex-col gap-6">
           <div className="flex justify-between items-center mb-[-10px]">
             <h2 className="text-xl font-bold text-[#1e1e2d]">Giving Velocity</h2>
-            <TimeFilter value={velocityFilter} onChange={setVelocityFilter} />
+            <TimeFilter value={velocityFilter} onChange={(val) => {
+              setVelocityFilter(val);
+              if (val.year !== selectedYear.toString()) setSelectedYear(parseInt(val.year));
+            }} />
           </div>
 
           <div className="dark-card p-8 h-[220px] relative shadow-xl shadow-indigo-900/10">
@@ -280,7 +288,10 @@ export const Dashboard: React.FC = () => {
 
           <div className="flex justify-between items-center mt-2">
             <h3 className="text-xl font-bold text-[#1e1e2d]">Top Fellowships</h3>
-            <TimeFilter value={fellowshipFilter} onChange={setFellowshipFilter} />
+            <TimeFilter value={fellowshipFilter} onChange={(val) => {
+              setFellowshipFilter(val);
+              if (val.year !== selectedYear.toString()) setSelectedYear(parseInt(val.year));
+            }} />
           </div>
 
           <div className="glass-panel p-8">

@@ -2,15 +2,16 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useDataStore, useAuthStore } from '../store';
 import { PaymentMethod, Transaction, Fellowship, FELLOWSHIP_PASTORS, Role } from '../types';
 import { getSundayDate } from '../lib/dateUtils';
-import { Calendar, Trash2, Filter, Play, Power, ArrowLeft, Upload, Users, X, UserPlus } from 'lucide-react';
+import { Calendar, Trash2, Filter, Play, Power, ArrowLeft, Upload, Users, X, UserPlus, Download } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 
 export const Entry: React.FC = () => {
-  const { members, transactions, activeBatchId, bulkAddTransactions, deleteTransaction, addMember } = useDataStore();
+  const { members, transactions, activeBatchId, bulkAddTransactions, deleteTransaction, addMember, selectedYear, setSelectedYear, updateBatchStatus } = useDataStore();
   const { user } = useAuthStore();
+  const navigate = useNavigate();
 
   // Session State
-  const [sessionYear, setSessionYear] = useState('2025');
   const [sessionMonth, setSessionMonth] = useState('JANUARY');
   const [sessionWeek, setSessionWeek] = useState(1);
   const [isSessionActive, setIsSessionActive] = useState(false);
@@ -105,7 +106,7 @@ export const Entry: React.FC = () => {
 
     const entriesToSubmit: Transaction[] = [];
     const memberIds = Object.keys(bulkEntries);
-    const timestamp = getSundayDate(parseInt(sessionYear), sessionMonth, sessionWeek);
+    const timestamp = getSundayDate(selectedYear, sessionMonth, sessionWeek);
     const batchId = `BATCH-${Date.now()}`; // Ideally this should be the active batch ID or a new session one
 
     memberIds.forEach(id => {
@@ -122,7 +123,7 @@ export const Entry: React.FC = () => {
             memberName: member.name,
             fellowship: member.fellowship,
             amount: amount,
-            method: PaymentMethod.CASH, // Default to CASH for now, maybe add toggle later
+            method: PaymentMethod.CASH,
             timestamp: timestamp,
             officerId: user?.id || 'sys',
             officerName: user?.name || 'Admin Entry'
@@ -132,12 +133,14 @@ export const Entry: React.FC = () => {
     });
 
     if (entriesToSubmit.length > 0) {
-      await bulkAddTransactions(entriesToSubmit);
-      // alert(`Successfully saved ${entriesToSubmit.length} transactions!`);
-      // Reset or go back
-      setBulkEntries({});
-      setViewMode('FELLOWSHIP_SELECT');
-      setSelectedFellowship(null);
+      try {
+        await bulkAddTransactions(entriesToSubmit);
+        alert(`Successfully saved ${entriesToSubmit.length} transactions!`);
+        // Keeping data visible on the screen, just reset the input fields
+        setBulkEntries({});
+      } catch (err: any) {
+        alert(err.message || 'Failed to save transactions to the database.');
+      }
     }
   };
 
@@ -161,6 +164,33 @@ export const Entry: React.FC = () => {
 
   const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
   const currentTransactions = filteredTransactions.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const exportToCSV = () => {
+    if (filteredTransactions.length === 0) {
+      alert('No data to export for this year/filter.');
+      return;
+    }
+    const headers = ['Date', 'Officer', 'Member', 'Fellowship', 'Method', 'Amount'];
+    const rows = filteredTransactions.map(txn => [
+      new Date(txn.timestamp).toLocaleDateString(),
+      txn.officerName || 'Admin Entry',
+      txn.memberName,
+      txn.fellowship,
+      txn.method,
+      txn.amount.toString()
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8," 
+        + headers.join(",") + "\\n" 
+        + rows.map(e => e.map(cell => `"${cell}"`).join(",")).join("\\n");
+        
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Transactions_${selectedYear}_Session.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const handleOpenFilter = () => {
     if (!isFilterOpen) {
@@ -224,13 +254,15 @@ export const Entry: React.FC = () => {
                 <label className="block text-[10px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 md:mb-1 text-left">Fiscal Year</label>
                 <div className="relative">
                   <select
-                    value={sessionYear}
-                    onChange={(e) => setSessionYear(e.target.value)}
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(parseInt(e.target.value))}
                     className="w-full bg-slate-50 border border-slate-200 rounded-lg py-1.5 md:py-1 px-3 font-bold text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow cursor-pointer hover:bg-slate-100"
                   >
                     <option value="2024">2024</option>
                     <option value="2025">2025</option>
                     <option value="2026">2026</option>
+                    <option value="2027">2027</option>
+                    <option value="2028">2028</option>
                   </select>
                 </div>
               </div>
@@ -294,15 +326,17 @@ export const Entry: React.FC = () => {
                 <div className="text-[10px] font-bold uppercase tracking-widest text-indigo-300 mb-0.5">Active Session</div>
                 <div className="font-bold flex items-center text-sm md:text-base">
                   <Calendar className="w-3.5 h-3.5 mr-2 opacity-75" />
-                  {sessionMonth.slice(0, 3)} {sessionYear} <span className="mx-2 opacity-50">|</span> Week {sessionWeek}
+                  {sessionMonth.slice(0, 3)} {selectedYear} <span className="mx-2 opacity-50">|</span> Week {sessionWeek}
                 </div>
               </div>
               <button
-                onClick={() => {
-                  if (window.confirm('End session? Unsaved inputs will be lost.')) {
+                onClick={async () => {
+                  if (window.confirm('Are you sure you want to end this session?')) {
+                    await updateBatchStatus('FINALIZED');
                     setIsSessionActive(false);
                     setBulkEntries({});
                     setViewMode('FELLOWSHIP_SELECT');
+                    navigate('/dashboard');
                   }
                 }}
                 className="bg-red-600/90 hover:bg-red-600 text-white p-2 rounded-lg transition-colors shadow-sm"
@@ -512,6 +546,13 @@ export const Entry: React.FC = () => {
             </p>
           </div>
           <div className="flex space-x-2 mr-2 z-30">
+            <button
+              onClick={exportToCSV}
+              className="flex items-center space-x-2 px-3 md:px-3 py-2 md:py-2 rounded-xl font-bold transition-all shadow-sm border bg-white text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+            >
+              <Download className="w-4 h-4" />
+              <span className="hidden md:inline">Export CSV</span>
+            </button>
             <div className="relative" ref={filterWrapperRef}>
               <button
                 onClick={handleOpenFilter}
