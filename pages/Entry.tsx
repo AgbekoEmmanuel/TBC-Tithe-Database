@@ -329,21 +329,33 @@ export const Entry: React.FC = () => {
                   {sessionMonth.slice(0, 3)} {selectedYear} <span className="mx-2 opacity-50">|</span> Week {sessionWeek}
                 </div>
               </div>
-              <button
-                onClick={async () => {
-                  if (window.confirm('Are you sure you want to end this session?')) {
-                    await updateBatchStatus('FINALIZED');
-                    setIsSessionActive(false);
-                    setBulkEntries({});
-                    setViewMode('FELLOWSHIP_SELECT');
-                    navigate('/dashboard');
-                  }
-                }}
-                className="bg-red-600/90 hover:bg-red-600 text-white p-2 rounded-lg transition-colors shadow-sm"
-                title="End Session"
-              >
-                <Power className="w-4 h-4" />
-              </button>
+              <div className="flex items-center space-x-2">
+                {viewMode === 'BULK_ENTRY' && Object.keys(bulkEntries).length > 0 && (
+                  <button
+                    onClick={submitBulkSession}
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg shadow-sm hover:shadow-md transition-all flex items-center text-xs md:text-sm animate-fade-in"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload ({Object.keys(bulkEntries).filter(k => parseFloat(bulkEntries[k]) > 0).length})
+                  </button>
+                )}
+                
+                <button
+                  onClick={async () => {
+                    if (window.confirm('Are you sure you want to end this session?')) {
+                      await updateBatchStatus('FINALIZED');
+                      setIsSessionActive(false);
+                      setBulkEntries({});
+                      setViewMode('FELLOWSHIP_SELECT');
+                      navigate('/dashboard');
+                    }
+                  }}
+                  className="bg-red-600/90 hover:bg-red-600 text-white p-2 rounded-lg transition-colors shadow-sm"
+                  title="End Session"
+                >
+                  <Power className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             {viewMode === 'FELLOWSHIP_SELECT' && (
@@ -448,16 +460,6 @@ export const Entry: React.FC = () => {
                       </div>
                     ))
                   )}
-                </div>
-
-                <div className="absolute bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur border-t border-slate-100 z-20">
-                  <button
-                    onClick={submitBulkSession}
-                    className="w-full bg-slate-900 text-white font-bold py-3 rounded-xl shadow-lg shadow-indigo-200 hover:shadow-2xl hover:bg-slate-800 active:scale-[0.98] transition-all flex items-center justify-center text-sm"
-                  >
-                    <Upload className="w-4 h-4 mr-2" />
-                    Upload Session ({Object.keys(bulkEntries).filter(k => parseFloat(bulkEntries[k]) > 0).length})
-                  </button>
                 </div>
               </div>
             )}
