@@ -238,6 +238,7 @@ export const useDataStore = create<DataState>((set, get) => ({
       method: txn.method,
       timestamp: txn.timestamp,
       officer_id: txn.officerId,
+      officer_name: txn.officerName,
       member_name: txn.memberName,
       fellowship: txn.fellowship
     };
@@ -287,6 +288,7 @@ export const useDataStore = create<DataState>((set, get) => ({
       method: txn.method,
       timestamp: txn.timestamp,
       officer_id: txn.officerId,
+      officer_name: txn.officerName,
       member_name: txn.memberName,
       fellowship: txn.fellowship
     }));

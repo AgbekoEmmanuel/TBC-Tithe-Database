@@ -43,11 +43,10 @@ export const exportToExcel = (members: Member[], transactions: Transaction[], ye
             }
         });
 
-        // Add YTD Header
+        // Add YTD Header — set in both rows so it's always visible
+        headerRow1[colIndex] = "YEAR TO DATE TOTAL";
         headerRow2[colIndex] = "YEAR TO DATE TOTAL";
-        merges.push({ s: { r: 0, c: colIndex }, e: { r: 1, c: colIndex } }); // Merge YTD vertically if we want, or just leave it
-        // Actually typically YTD doesn't have a month header above it, so we leave row 1 index empty there?
-        // Or we can merge row 0 and 1 for YTD. Let's leave row 0 empty for YTD col.
+        merges.push({ s: { r: 0, c: colIndex }, e: { r: 1, c: colIndex } }); // Merge rows for YTD column
 
         const wsData: any[][] = [
             headerRow1,
@@ -86,8 +85,12 @@ export const exportToExcel = (members: Member[], transactions: Transaction[], ye
                 }
             });
 
-            // Add YTD
-            row.push(member.ytdTotal);
+            // Calculate YTD by summing this member's transactions from the passed-in array
+            // (the array is already filtered to the selected year at the call site)
+            const ytd = transactions
+                .filter(t => t.memberId === member.id)
+                .reduce((sum, t) => sum + t.amount, 0);
+            row.push(ytd || 0);
             wsData.push(row);
         });
 
