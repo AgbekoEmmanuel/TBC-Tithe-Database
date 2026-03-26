@@ -48,33 +48,44 @@ export const Layout: React.FC = () => {
     if (!e.target.files || !e.target.files[0] || !user) return;
 
     const file = e.target.files[0];
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${user.id}-${Math.random()}.${fileExt}`;
-    const filePath = `${fileName}`;
-
     setIsUploading(true);
+
     try {
-      // 1. Upload to Storage
+      let avatarUrl: string;
+
+      // Try storage upload first
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${user.id}/avatar.${fileExt}`;
+
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file);
+        .upload(filePath, file, { upsert: true });
 
-      if (uploadError) throw uploadError;
+      if (!uploadError) {
+        // Storage succeeded — get public URL with cache-buster
+        const { data: { publicUrl } } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(filePath);
+        avatarUrl = `${publicUrl}?t=${Date.now()}`;
+      } else {
+        // Storage failed (bucket missing / no policy) — fall back to base64 data URL
+        console.warn('Storage upload failed, using base64 fallback:', uploadError.message);
+        avatarUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
 
-      // 2. Get Public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
+      // Persist in Auth user_metadata — works without any DB schema changes
+      const { error: metaError } = await supabase.auth.updateUser({
+        data: { avatar_url: avatarUrl }
+      });
 
-      // 3. Update Profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: publicUrl })
-        .eq('id', user.id);
+      if (metaError) throw metaError;
 
-      if (profileError) throw profileError;
-
-      // 4. Refresh State
+      // Refresh state so the new picture shows immediately
       await checkAuth();
 
     } catch (error) {
@@ -82,14 +93,16 @@ export const Layout: React.FC = () => {
       alert('Failed to upload image. Please try again.');
     } finally {
       setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
   // Helper to get current avatar source
+  // avatarUrl (from DB) always takes priority so uploaded photos are shown immediately
   const getAvatarSrc = () => {
+    if (user?.avatarUrl) return user.avatarUrl;
     if (user?.email === 'admin@tbc.com') return pheebsProfile;
     if (user?.name?.toLowerCase().includes('serwaa')) return serwaaProfile;
-    if (user?.avatarUrl) return user.avatarUrl;
     return null;
   };
 

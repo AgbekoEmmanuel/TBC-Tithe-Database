@@ -55,7 +55,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         email: authData.user.email || email,
         name: displayName,
         role,
-        avatarUrl: profileData?.avatar_url
+        avatarUrl: authData.user.user_metadata?.avatar_url || profileData?.avatar_url
       };
 
       set({ isAuthenticated: true, user, isLoading: false });
@@ -96,7 +96,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         email: session.user.email!,
         name: displayName,
         role,
-        avatarUrl: profileData?.avatar_url
+        avatarUrl: session.user.user_metadata?.avatar_url || profileData?.avatar_url
       };
 
       set({ isAuthenticated: true, user, isLoading: false });
