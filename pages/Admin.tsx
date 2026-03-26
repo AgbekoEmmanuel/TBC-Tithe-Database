@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, FileSpreadsheet, Check, AlertTriangle, Loader, Database, Save, Edit, X, Lock } from 'lucide-react';
+import { Upload, FileSpreadsheet, Check, AlertTriangle, Loader, Database, Save, Edit, X, Lock, Eye, EyeOff } from 'lucide-react';
 import { parseExcelData } from '../lib/importUtils';
 import { exportToExcel } from '../lib/exportUtils';
 import { useDataStore, useAuthStore } from '../store';
@@ -25,6 +25,7 @@ export const Admin: React.FC = () => {
     const [editForm, setEditForm] = useState({ email: '', password: '', name: '', role: 'OFFICER' });
     const [updateStatus, setUpdateStatus] = useState<'IDLE' | 'SUCCESS' | 'ERROR'>('IDLE');
     const [updateMessage, setUpdateMessage] = useState('');
+    const [showNewPassword, setShowNewPassword] = useState(false);
 
     useEffect(() => {
         fetchUsers();
@@ -200,14 +201,24 @@ export const Admin: React.FC = () => {
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-slate-500 mb-2 uppercase tracking-wider">Password</label>
-                                <input
-                                    type="password"
-                                    value={newUser.password}
-                                    onChange={e => setNewUser({ ...newUser, password: e.target.value })}
-                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                    required
-                                    minLength={6}
-                                />
+                                <div className="relative">
+                                    <input
+                                        type={showNewPassword ? 'text' : 'password'}
+                                        value={newUser.password}
+                                        onChange={e => setNewUser({ ...newUser, password: e.target.value })}
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pr-12 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        required
+                                        minLength={6}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowNewPassword(!showNewPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors"
+                                        tabIndex={-1}
+                                    >
+                                        {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
