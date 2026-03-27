@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useDataStore } from '../store';
 import {
   TrendingUp,
@@ -8,7 +9,9 @@ import {
   ArrowUpRight,
   MoreHorizontal,
   Hash,
-  Crown
+  Crown,
+  Download,
+  Loader
 } from 'lucide-react';
 import {
   AreaChart,
@@ -30,8 +33,47 @@ export const Dashboard: React.FC = () => {
   const YEARS = ['2024', '2025', '2026'];
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-  const [velocityFilter, setVelocityFilter] = React.useState<{ month: string; year: string }>({ month: 'Jan', year: selectedYear.toString() });
-  const [fellowshipFilter, setFellowshipFilter] = React.useState<{ month: string; year: string }>({ month: 'Jan', year: selectedYear.toString() });
+  const [velocityFilter, setVelocityFilter] = useState<{ month: string; year: string }>({ month: 'Jan', year: selectedYear.toString() });
+  const [fellowshipFilter, setFellowshipFilter] = useState<{ month: string; year: string }>({ month: 'Jan', year: selectedYear.toString() });
+
+  // Fellowship Report State
+  const [isFellowshipReportOpen, setIsFellowshipReportOpen] = useState(false);
+  const [fellowshipReportYear, setFellowshipReportYear] = useState(selectedYear.toString());
+  const [isGeneratingFellowshipReport, setIsGeneratingFellowshipReport] = useState(false);
+
+  const LOGO_URL = (new URL('../src/images/TBC logo full.png', import.meta.url)).href;
+  const ALL_FELLOWSHIPS = [
+    'Thyatira', 'Philippi', 'Laodicea', 'Balance', 'Ephesus',
+    'Smyrna', 'Sardis', 'Pergamos', 'Berea', 'Philadelphia'
+  ];
+
+  const handleFellowshipReport = async () => {
+    setIsGeneratingFellowshipReport(true);
+    try {
+      const { generateFellowshipAnnualReport } = await import('../lib/reportUtils');
+      const year = parseInt(fellowshipReportYear);
+      const yearTxns = transactions.filter(t => new Date(t.timestamp).getFullYear() === year);
+
+      // Build: { fellowshipName -> monthlyTotals[12] }
+      const data = ALL_FELLOWSHIPS.map(fellowship => {
+        const monthlyTotals = MONTHS.map((_, idx) =>
+          yearTxns
+            .filter(t => t.fellowship === fellowship && new Date(t.timestamp).getMonth() === idx)
+            .reduce((s, t) => s + t.amount, 0)
+        );
+        const annualTotal = monthlyTotals.reduce((s, v) => s + v, 0);
+        return { fellowship, monthlyTotals, annualTotal };
+      });
+
+      await generateFellowshipAnnualReport(data, MONTHS, fellowshipReportYear, LOGO_URL);
+      setIsFellowshipReportOpen(false);
+    } catch (err) {
+      console.error('Fellowship report error:', err);
+      alert('Failed to generate report. Please try again.');
+    } finally {
+      setIsGeneratingFellowshipReport(false);
+    }
+  };
 
   React.useEffect(() => {
     setVelocityFilter(prev => ({ ...prev, year: selectedYear.toString() }));
@@ -284,12 +326,73 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
+          {/* Fellowship Report Modal */}
+          {isFellowshipReportOpen && createPortal(
+            <div
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-fade-in"
+              onClick={() => setIsFellowshipReportOpen(false)}
+            >
+              <div
+                className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 animate-scale-in"
+                onClick={e => e.stopPropagation()}
+              >
+                <h3 className="text-xl font-bold text-slate-800 mb-2">Fellowship Annual Report</h3>
+                <p className="text-slate-500 text-sm mb-6">Generates a full-year breakdown showing each fellowship's monthly contributions and annual total.</p>
+
+                <div className="mb-8">
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Year</label>
+                  <select
+                    value={fellowshipReportYear}
+                    onChange={e => {
+                      setFellowshipReportYear(e.target.value);
+                      if (e.target.value !== selectedYear.toString()) setSelectedYear(parseInt(e.target.value));
+                    }}
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700"
+                  >
+                    {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                    <option value="2027">2027</option>
+                    <option value="2028">2028</option>
+                  </select>
+                </div>
+
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => setIsFellowshipReportOpen(false)}
+                    className="flex-1 py-3 text-slate-500 font-bold hover:bg-slate-50 rounded-xl transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleFellowshipReport}
+                    disabled={isGeneratingFellowshipReport}
+                    className="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all flex items-center justify-center"
+                  >
+                    {isGeneratingFellowshipReport
+                      ? <Loader className="w-4 h-4 mr-2 animate-spin" />
+                      : <Download className="w-4 h-4 mr-2" />}
+                    Download PDF
+                  </button>
+                </div>
+              </div>
+            </div>
+            , document.body)
+          }
+
           <div className="flex justify-between items-center mt-2">
             <h3 className="text-xl font-bold text-[#1e1e2d]">Top Fellowships</h3>
-            <TimeFilter value={fellowshipFilter} onChange={(val) => {
-              setFellowshipFilter(val);
-              if (val.year !== selectedYear.toString()) setSelectedYear(parseInt(val.year));
-            }} />
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setIsFellowshipReportOpen(true)}
+                className="flex items-center space-x-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-200 text-xs"
+              >
+                <Download className="w-3 h-3" />
+                <span>Generate Report</span>
+              </button>
+              <TimeFilter value={fellowshipFilter} onChange={(val) => {
+                setFellowshipFilter(val);
+                if (val.year !== selectedYear.toString()) setSelectedYear(parseInt(val.year));
+              }} />
+            </div>
           </div>
 
           <div className="glass-panel p-8">
