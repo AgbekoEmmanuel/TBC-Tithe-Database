@@ -134,7 +134,7 @@ export const Entry: React.FC = () => {
             method: bulkMethods[id] || PaymentMethod.CASH,
             timestamp: timestamp,
             officerId: user?.id || 'sys',
-            officerName: user?.name || user?.email || 'Unknown Officer'
+            officerName: user?.name || 'Admin Entry'
           });
         }
       }
@@ -182,7 +182,7 @@ export const Entry: React.FC = () => {
     const headers = ['Date', 'Officer', 'Member', 'Fellowship', 'Method', 'Amount'];
     const rows = filteredTransactions.map(txn => [
       new Date(txn.timestamp).toLocaleDateString(),
-      txn.officerName || txn.officerId || 'Unknown Officer',
+      txn.officerName || 'Admin Entry',
       txn.memberName,
       txn.fellowship,
       txn.method,
@@ -750,7 +750,7 @@ export const Entry: React.FC = () => {
                       {new Date(txn.timestamp).toLocaleDateString()}
                     </td>
                     <td className="px-3 md:px-4 py-2 md:py-2 text-[10px] md:text-xs font-bold text-indigo-900/70">
-                      {txn.officerName || txn.officerId || 'Unknown Officer'}
+                      {txn.officerName || 'Admin Entry'}
                     </td>
                     <td className="px-3 md:px-4 py-2 md:py-2">
                       <div className="font-bold text-slate-700 text-xs md:text-sm">{txn.memberName}</div>
