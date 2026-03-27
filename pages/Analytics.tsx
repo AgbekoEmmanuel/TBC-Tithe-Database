@@ -172,38 +172,50 @@ export const Analytics: React.FC = () => {
   const handleGenerateReport = async () => {
     setIsGenerating(true);
     try {
-      // Lazy load the generator to ensure jspdf is loaded
-      const { generatePDFReport } = await import('../lib/reportUtils');
+      if (reportFilter.month === 'ALL_MONTHS') {
+        // Annual summary report
+        const { generateAnnualReport } = await import('../lib/reportUtils');
+        const year = parseInt(reportFilter.year);
 
-      // Filter data based on report selection
-      const reportTxns = filterTxns(reportFilter);
+        // Build monthly totals from ALL transactions in the selected year
+        const yearTxns = transactions.filter(t => new Date(t.timestamp).getFullYear() === year);
 
-      // Compute Chart Data for the Report (Reuse logic from getFellowshipWeeklyData but specific to filtered set)
-      const map: Record<string, { [key: string]: number }> = {};
-      FELLOWSHIPS.forEach(f => {
-        map[f] = { week1: 0, week2: 0, week3: 0, week4: 0, week5: 0 };
-      });
+        const monthlyTotals = MONTHS.map((name, idx) => {
+          const total = yearTxns
+            .filter(t => new Date(t.timestamp).getMonth() === idx)
+            .reduce((sum, t) => sum + t.amount, 0);
+          return { name, total };
+        });
 
-      reportTxns.forEach(t => {
-        const f = t.fellowship;
-        if (!map[f]) map[f] = { week1: 0, week2: 0, week3: 0, week4: 0, week5: 0 };
+        await generateAnnualReport(yearTxns, reportFilter.year, monthlyTotals, LOGO_URL);
+      } else {
+        // Existing per-month / per-week report
+        const { generatePDFReport } = await import('../lib/reportUtils');
 
-        const day = new Date(t.timestamp).getDate();
-        const w = Math.min(Math.floor((day - 1) / 7) + 1, 5);
-        map[f][`week${w}`] += t.amount;
-      });
+        const reportTxns = filterTxns(reportFilter);
 
-      const reportChartData = FELLOWSHIPS.map(f => ({
-        name: f,
-        week1: map[f].week1,
-        week2: map[f].week2,
-        week3: map[f].week3,
-        week4: map[f].week4,
-        week5: map[f].week5
-      }));
+        const map: Record<string, { [key: string]: number }> = {};
+        FELLOWSHIPS.forEach(f => { map[f] = { week1: 0, week2: 0, week3: 0, week4: 0, week5: 0 }; });
 
-      // Generate
-      await generatePDFReport(reportTxns, reportFilter, reportChartData, LOGO_URL);
+        reportTxns.forEach(t => {
+          const f = t.fellowship;
+          if (!map[f]) map[f] = { week1: 0, week2: 0, week3: 0, week4: 0, week5: 0 };
+          const day = new Date(t.timestamp).getDate();
+          const w = Math.min(Math.floor((day - 1) / 7) + 1, 5);
+          map[f][`week${w}`] += t.amount;
+        });
+
+        const reportChartData = FELLOWSHIPS.map(f => ({
+          name: f,
+          week1: map[f].week1,
+          week2: map[f].week2,
+          week3: map[f].week3,
+          week4: map[f].week4,
+          week5: map[f].week5
+        }));
+
+        await generatePDFReport(reportTxns, reportFilter, reportChartData, LOGO_URL);
+      }
 
       setIsReportModalOpen(false);
     } catch (error) {
@@ -251,27 +263,33 @@ export const Analytics: React.FC = () => {
                   <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Month</label>
                   <select
                     value={reportFilter.month}
-                    onChange={(e) => setReportFilter({ ...reportFilter, month: e.target.value })}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setReportFilter({ ...reportFilter, month: val, week: val === 'ALL_MONTHS' ? 'All' : reportFilter.week });
+                    }}
                     className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700"
                   >
+                    <option value="ALL_MONTHS">All Months</option>
                     {MONTHS.map(m => <option key={m} value={m}>{m}</option>)}
                   </select>
                 </div>
-                <div className="w-1/3">
-                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Week</label>
-                  <select
-                    value={reportFilter.week}
-                    onChange={(e) => setReportFilter({ ...reportFilter, week: e.target.value as WeekOption })}
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700"
-                  >
-                    <option value="All">All</option>
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                  </select>
-                </div>
+                {reportFilter.month !== 'ALL_MONTHS' && (
+                  <div className="w-1/3">
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Week</label>
+                    <select
+                      value={reportFilter.week}
+                      onChange={(e) => setReportFilter({ ...reportFilter, week: e.target.value as WeekOption })}
+                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700"
+                    >
+                      <option value="All">All</option>
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="4">4</option>
+                      <option value="5">5</option>
+                    </select>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -306,7 +324,7 @@ export const Analytics: React.FC = () => {
             className="flex items-center space-x-1.5 md:space-x-2 px-3 py-1.5 md:px-5 md:py-3 bg-indigo-600 text-white rounded-lg md:rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-md md:shadow-lg shadow-indigo-200 text-xs md:text-base"
           >
             <Printer className="w-3 h-3 md:w-4 md:h-4" />
-            <span>Generate PDF</span>
+            <span>Generate Report</span>
           </button>
 
 

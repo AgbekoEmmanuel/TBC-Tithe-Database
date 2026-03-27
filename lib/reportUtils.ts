@@ -312,3 +312,169 @@ export const generatePDFReport = async (
     const fileName = `Tithe Report (${period.month} ${period.year}${period.week !== 'All' ? ' - Week ' + period.week : ' - Monthly'}).pdf`;
     doc.save(fileName);
 };
+
+// ─── Annual Summary Report ────────────────────────────────────────────────────
+export const generateAnnualReport = async (
+    transactions: Transaction[],
+    year: string,
+    monthlyTotals: { name: string; total: number }[],
+    logoUrl: string
+) => {
+    const grandTotal = monthlyTotals.reduce((s, m) => s + m.total, 0);
+    const doc = new jsPDF();
+
+    // --- Font Loading ---
+    try {
+        const loadFont = async (url: string) => {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const reader = new FileReader();
+            return new Promise<string>((resolve) => {
+                reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+                reader.readAsDataURL(blob);
+            });
+        };
+        const [regFont, boldFont] = await Promise.all([
+            loadFont('https://raw.githubusercontent.com/google/fonts/main/ofl/poppins/Poppins-Regular.ttf'),
+            loadFont('https://raw.githubusercontent.com/google/fonts/main/ofl/poppins/Poppins-Bold.ttf')
+        ]);
+        doc.addFileToVFS('Poppins-Regular.ttf', regFont);
+        doc.addFont('Poppins-Regular.ttf', 'Poppins', 'normal');
+        doc.addFileToVFS('Poppins-Bold.ttf', boldFont);
+        doc.addFont('Poppins-Bold.ttf', 'Poppins', 'bold');
+    } catch (e) {
+        console.warn('Could not load Poppins font', e);
+    }
+
+    const rf = doc.getFontList().Poppins ? 'Poppins' : 'helvetica';
+
+    // --- Logo ---
+    try {
+        const imgProps = doc.getImageProperties(logoUrl);
+        const imgWidth = 35;
+        const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+        doc.addImage(logoUrl, 'PNG', 14, 25, imgWidth, imgHeight);
+    } catch (e) { /* ignore */ }
+
+    // --- Header ---
+    doc.setTextColor(30, 41, 59);
+    doc.setFontSize(10); doc.setFont(rf, 'bold');
+    doc.text('The Tithe Department', 105, 33, { align: 'center' });
+    doc.setFontSize(24); doc.setFont(rf, 'bold');
+    doc.text('ANNUAL FINANCIAL REPORT', 105, 43, { align: 'center' });
+    doc.setFontSize(12); doc.setTextColor(100, 116, 139); doc.setFont(rf, 'normal');
+    doc.text(`FISCAL YEAR ${year}`, 105, 51, { align: 'center' });
+
+    // --- Monthly Totals Table ---
+    const tableBody = monthlyTotals.map(m => [
+        m.name.toUpperCase(),
+        `GHS ${m.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    ]);
+    tableBody.push([
+        'GRAND TOTAL',
+        `GHS ${grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    ]);
+
+    autoTable(doc, {
+        startY: 65,
+        head: [['MONTH', 'AMOUNT COLLECTED']],
+        body: tableBody,
+        headStyles: {
+            fillColor: [30, 41, 59],
+            textColor: [255, 255, 255],
+            fontStyle: 'bold',
+            font: rf,
+            halign: 'left'
+        },
+        bodyStyles: {
+            textColor: [51, 65, 85],
+            fontSize: 10,
+            font: rf,
+            halign: 'left'
+        },
+        columnStyles: {
+            0: { cellWidth: 100 },
+            1: { cellWidth: 80, halign: 'right', fontStyle: 'bold' }
+        },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        theme: 'grid',
+        margin: { left: 15, right: 15 },
+        didParseCell: (data) => {
+            // Bold grand total row
+            if (data.row.index === tableBody.length - 1 && data.section === 'body') {
+                data.cell.styles.fontStyle = 'bold';
+                data.cell.styles.fillColor = [241, 245, 249];
+            }
+        }
+    });
+
+    // --- Footer page 1 ---
+    const dateStr = new Date().toLocaleString();
+    doc.setFontSize(8); doc.setTextColor(150);
+    doc.text(`Generated on: ${dateStr}`, 15, 290);
+    doc.text('The Tithe Department', 195, 290, { align: 'right' });
+
+    // ── PAGE 2: Monthly Bar Chart ──────────────────────────────────────────────
+    doc.addPage();
+
+    doc.setFontSize(14); doc.setTextColor(30, 41, 59); doc.setFont(rf, 'bold');
+    doc.text(`Monthly Collection Trends — ${year}`, 15, 20);
+
+    const chartStartY = 35;
+    const chartHeight = 100;
+    const chartWidth = 170;
+    const startX = 28;
+
+    // Axes
+    doc.setDrawColor(200, 200, 200);
+    doc.line(startX, chartStartY, startX, chartStartY + chartHeight);
+    doc.line(startX, chartStartY + chartHeight, startX + chartWidth, chartStartY + chartHeight);
+
+    const maxVal = Math.max(...monthlyTotals.map(m => m.total), 1);
+    const yMax = Math.ceil(maxVal / 1000) * 1000 || 1000;
+    const steps = 4;
+
+    // Y-axis labels + grid lines
+    doc.setFontSize(7); doc.setTextColor(150); doc.setFont(rf, 'normal');
+    for (let i = 0; i <= steps; i++) {
+        const val = (yMax / steps) * i;
+        const yPos = (chartStartY + chartHeight) - ((val / yMax) * chartHeight);
+        doc.text(`${val >= 1000 ? (val / 1000).toFixed(1) + 'k' : val}`, startX - 2, yPos + 1, { align: 'right' });
+        if (i > 0) {
+            doc.setDrawColor(240, 240, 240);
+            doc.line(startX, yPos, startX + chartWidth, yPos);
+        }
+    }
+
+    // Bars
+    const MONTH_COLOR: [number, number, number] = [99, 102, 241]; // indigo
+    const barWidth = chartWidth / monthlyTotals.length - 2;
+    const gap = 2;
+
+    monthlyTotals.forEach((m, i) => {
+        const x = startX + i * (barWidth + gap) + gap / 2;
+
+        if (m.total > 0) {
+            const h = (m.total / yMax) * chartHeight;
+            doc.setFillColor(MONTH_COLOR[0], MONTH_COLOR[1], MONTH_COLOR[2]);
+            doc.rect(x, chartStartY + chartHeight - h, barWidth, h, 'F');
+
+            // Amount on top of bar
+            const label = m.total >= 1000 ? (m.total / 1000).toFixed(1) + 'k' : m.total.toString();
+            doc.setFontSize(5.5);
+            doc.setTextColor(30, 41, 59);
+            doc.text(label, x + barWidth / 2, chartStartY + chartHeight - h - 2, { align: 'center' });
+        }
+
+        // Month label below bar
+        doc.setFontSize(6); doc.setTextColor(80); doc.setFont(rf, 'normal');
+        doc.text(m.name.substring(0, 3).toUpperCase(), x + barWidth / 2, chartStartY + chartHeight + 5, { align: 'center' });
+    });
+
+    // Footer page 2
+    doc.setFontSize(8); doc.setTextColor(150);
+    doc.text(`Generated on: ${dateStr}`, 15, 290);
+    doc.text('The Tithe Department', 195, 290, { align: 'right' });
+
+    doc.save(`Annual Tithe Report (${year}).pdf`);
+};
