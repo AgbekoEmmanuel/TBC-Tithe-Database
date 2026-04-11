@@ -68,7 +68,8 @@ export const generatePDFReport = async (
     const best = { name: bestNames || 'N/A', amount: maxValStats };
     const worst = { name: worstNames || 'N/A', amount: minValStats };
 
-    const doc = new jsPDF();
+    const isAllWeeks = period.week === 'All';
+    const doc = isAllWeeks ? new jsPDF({ orientation: 'landscape' }) : new jsPDF();
 
     // --- Font Loading (Poppins) ---
     try {
@@ -125,69 +126,163 @@ export const generatePDFReport = async (
 
     // Titles
     doc.setTextColor(30, 41, 59); // Slate 800
+    // Center point differs by orientation (landscape=297mm wide, portrait=210mm)
+    const centerX = isAllWeeks ? 148.5 : 105;
 
     // "The Tithe Department"
     doc.setFontSize(10);
     doc.setFont(titleFont, 'bold');
-    doc.text('The Tithe Department', 105, 33, { align: 'center' });
+    doc.text('The Tithe Department', centerX, 33, { align: 'center' });
 
     // "FINANCIAL REPORT"
     doc.setFontSize(24);
     doc.setFont(titleFont, 'bold');
-    doc.text('FINANCIAL REPORT', 105, 43, { align: 'center' });
+    doc.text('FINANCIAL REPORT', centerX, 43, { align: 'center' });
 
     // Period Subtitle
     doc.setFontSize(12);
     doc.setTextColor(100, 116, 139); // Slate 500
     doc.setFont(titleFont, 'normal');
     const periodText = `${period.month} ${period.year} ${period.week !== 'All' ? '- Week ' + period.week : '- Monthly Summary'}`;
-    doc.text(periodText.toUpperCase(), 105, 51, { align: 'center' });
+    doc.text(periodText.toUpperCase(), centerX, 51, { align: 'center' });
 
-    // --- 4. Fellowship Breakdown Table (First) ---
-    const fellowshipTableData = fellowshipArr.map(f => [
-        f.name,
-        `GHS ${f.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-    ]);
+    // --- 4. Fellowship Breakdown Table ---
+    const fmt = (n: number) =>
+        `GHS ${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-    // Add Total Row
-    fellowshipTableData.push(['TOTAL', `GHS ${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`]);
+    if (isAllWeeks) {
+        // ── ALL WEEKS MODE: one column per week + row total + column totals row ──
+        const cdMap: Record<string, ChartData> = {};
+        chartData.forEach(cd => { cdMap[cd.name] = cd; });
 
-    autoTable(doc, {
-        startY: 65,
-        head: [['FELLOWSHIP', 'AMOUNT']],
-        body: fellowshipTableData,
-        headStyles: {
-            fillColor: [30, 41, 59], // Slate 800
-            textColor: [255, 255, 255],
-            fontStyle: 'bold',
-            halign: 'left',
-            font: titleFont
-        },
-        bodyStyles: {
-            textColor: [51, 65, 85], // Slate 700
-            fontSize: 10,
-            halign: 'left',
-            font: bodyFont
-        },
-        columnStyles: {
-            0: { cellWidth: 100 },
-            1: { cellWidth: 80, halign: 'right', fontStyle: 'bold' }
-        },
-        alternateRowStyles: {
-            fillColor: [248, 250, 252] // Slate 50
-        },
-        foot: [['', '']], // Empty footer to draw line
-        footStyles: { fillColor: [255, 255, 255] },
-        theme: 'grid',
-        margin: { left: 15, right: 15 },
-        didParseCell: (data) => {
-            // Bold the Total Row
-            if (data.row.index === fellowshipTableData.length - 1 && data.section === 'body') {
-                data.cell.styles.fontStyle = 'bold';
-                data.cell.styles.fillColor = [241, 245, 249]; // Slate 100
+        // Per-week column totals
+        const weekColTotals = [0, 0, 0, 0, 0];
+        ALL_FELLOWSHIPS.forEach(f => {
+            const cd = cdMap[f];
+            if (cd) {
+                weekColTotals[0] += cd.week1;
+                weekColTotals[1] += cd.week2;
+                weekColTotals[2] += cd.week3;
+                weekColTotals[3] += cd.week4;
+                weekColTotals[4] += cd.week5;
             }
-        }
-    });
+        });
+
+        const head = [['FELLOWSHIP', 'WEEK 1', 'WEEK 2', 'WEEK 3', 'WEEK 4', 'WEEK 5', 'TOTAL']];
+
+        const body: string[][] = ALL_FELLOWSHIPS.map(f => {
+            const cd = cdMap[f];
+            const w1 = cd ? cd.week1 : 0;
+            const w2 = cd ? cd.week2 : 0;
+            const w3 = cd ? cd.week3 : 0;
+            const w4 = cd ? cd.week4 : 0;
+            const w5 = cd ? cd.week5 : 0;
+            const rowTotal = w1 + w2 + w3 + w4 + w5;
+            return [
+                f,
+                w1 > 0 ? fmt(w1) : '-',
+                w2 > 0 ? fmt(w2) : '-',
+                w3 > 0 ? fmt(w3) : '-',
+                w4 > 0 ? fmt(w4) : '-',
+                w5 > 0 ? fmt(w5) : '-',
+                fmt(rowTotal)
+            ];
+        });
+
+        // Grand totals row
+        const grandTotal = weekColTotals.reduce((s, v) => s + v, 0);
+        body.push([
+            'TOTAL',
+            ...weekColTotals.map(v => v > 0 ? fmt(v) : '-'),
+            fmt(grandTotal)
+        ]);
+
+        autoTable(doc, {
+            startY: 65,
+            head,
+            body,
+            headStyles: {
+                fillColor: [30, 41, 59],
+                textColor: [255, 255, 255],
+                fontStyle: 'bold',
+                halign: 'center',
+                font: titleFont,
+                fontSize: 8
+            },
+            bodyStyles: {
+                textColor: [51, 65, 85],
+                fontSize: 8,
+                halign: 'right',
+                font: bodyFont
+            },
+            columnStyles: {
+                0: { halign: 'left', fontStyle: 'bold', cellWidth: 40 },
+                1: { halign: 'right', cellWidth: 34 },
+                2: { halign: 'right', cellWidth: 34 },
+                3: { halign: 'right', cellWidth: 34 },
+                4: { halign: 'right', cellWidth: 34 },
+                5: { halign: 'right', cellWidth: 34 },
+                6: { halign: 'right', fontStyle: 'bold', cellWidth: 39, fillColor: [241, 245, 249] }
+            },
+            alternateRowStyles: { fillColor: [248, 250, 252] },
+            theme: 'grid',
+            margin: { left: 10, right: 10 },
+            didParseCell: (data) => {
+                // Bold + dark header style for the grand-totals row
+                if (data.row.index === body.length - 1 && data.section === 'body') {
+                    data.cell.styles.fontStyle = 'bold';
+                    data.cell.styles.fillColor = [30, 41, 59];
+                    data.cell.styles.textColor = [255, 255, 255];
+                }
+            }
+        });
+
+    } else {
+        // ── SINGLE WEEK MODE: original 2-column table ────────────────────────────
+        const fellowshipTableData = fellowshipArr.map(f => [
+            f.name,
+            `GHS ${f.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        ]);
+
+        // Add Total Row
+        fellowshipTableData.push(['TOTAL', `GHS ${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`]);
+
+        autoTable(doc, {
+            startY: 65,
+            head: [['FELLOWSHIP', 'AMOUNT']],
+            body: fellowshipTableData,
+            headStyles: {
+                fillColor: [30, 41, 59],
+                textColor: [255, 255, 255],
+                fontStyle: 'bold',
+                halign: 'left',
+                font: titleFont
+            },
+            bodyStyles: {
+                textColor: [51, 65, 85],
+                fontSize: 10,
+                halign: 'left',
+                font: bodyFont
+            },
+            columnStyles: {
+                0: { cellWidth: 100 },
+                1: { cellWidth: 80, halign: 'right', fontStyle: 'bold' }
+            },
+            alternateRowStyles: {
+                fillColor: [248, 250, 252]
+            },
+            foot: [['', '']],
+            footStyles: { fillColor: [255, 255, 255] },
+            theme: 'grid',
+            margin: { left: 15, right: 15 },
+            didParseCell: (data) => {
+                if (data.row.index === fellowshipTableData.length - 1 && data.section === 'body') {
+                    data.cell.styles.fontStyle = 'bold';
+                    data.cell.styles.fillColor = [241, 245, 249];
+                }
+            }
+        });
+    }
 
     // --- 5. Summary Stats Table (Second) ---
     const summaryStartY = (doc as any).lastAutoTable.finalY + 10;
