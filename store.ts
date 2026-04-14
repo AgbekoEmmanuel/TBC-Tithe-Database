@@ -147,25 +147,50 @@ export const useDataStore = create<DataState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const year = get().selectedYear;
-      const [membersRes, txnsRes, batchesRes] = await Promise.all([
-        supabase.from('members').select('*').order('name'),
-        supabase.from('transactions')
+
+      const fetchAll = async (queryBuilder: any) => {
+        let allData: any[] = [];
+        let from = 0;
+        const limit = 1000;
+        let keepFetching = true;
+
+        while (keepFetching) {
+          const { data, error } = await queryBuilder.range(from, from + limit - 1);
+          if (error) throw error;
+          
+          if (data && data.length > 0) {
+            allData = [...allData, ...data];
+            if (data.length < limit) {
+              keepFetching = false;
+            } else {
+              from += limit;
+            }
+          } else {
+            keepFetching = false;
+          }
+        }
+        return allData;
+      };
+
+      const membersQuery = supabase.from('members').select('*').order('name');
+      const txnsQuery = supabase.from('transactions')
           .select('*')
           .gte('timestamp', `${year}-01-01T00:00:00Z`)
           .lt('timestamp', `${year + 1}-01-01T00:00:00Z`)
-          .order('timestamp', { ascending: false }),
-        supabase.from('batches').select('*').order('date', { ascending: false })
+          .order('timestamp', { ascending: false });
+      const batchesQuery = supabase.from('batches').select('*').order('date', { ascending: false });
+
+      const [membersData, txnsData, batchesData] = await Promise.all([
+        fetchAll(membersQuery),
+        fetchAll(txnsQuery),
+        fetchAll(batchesQuery)
       ]);
 
-      if (membersRes.error) throw membersRes.error;
-      if (txnsRes.error) throw txnsRes.error;
-      if (batchesRes.error) throw batchesRes.error;
-
       // Ensure we have an active batch
-      let rawBatches = batchesRes.data || [];
+      let rawBatches = batchesData || [];
       let activeBatchId = 'BATCH-CURRENT';
 
-      const openBatch = rawBatches.find(b => b.status === 'OPEN' || b.status === 'COUNTING');
+      const openBatch = rawBatches.find((b: any) => b.status === 'OPEN' || b.status === 'COUNTING');
       if (openBatch) {
         activeBatchId = openBatch.id;
       } else {
@@ -189,11 +214,11 @@ export const useDataStore = create<DataState>((set, get) => ({
       }
 
       set({
-        members: (membersRes.data || []).map((m: any) => ({
+        members: (membersData || []).map((m: any) => ({
           ...m,
           ytdTotal: m.ytd_total || 0,
         })) as Member[],
-        transactions: (txnsRes.data || []).map((t: any) => ({
+        transactions: (txnsData || []).map((t: any) => ({
           ...t,
           batchId: t.batch_id,
           memberId: t.member_id,
