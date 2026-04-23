@@ -352,14 +352,14 @@ export const Directory: React.FC = () => {
                     </button>
                     <button
                       onClick={() => {
-                        if (window.confirm(`Are you sure you want to delete ${member.name}? This will also delete their transaction history.`)) {
+                        if (window.confirm(`Are you sure you want to deactivate ${member.name}? The member will be marked as PROVISIONAL and their transaction history will be preserved.`)) {
                           deleteMember(member.id);
                         }
                       }}
-                      className="text-slate-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition-colors"
-                      title="Delete Member"
+                      className="text-slate-400 hover:text-amber-600 p-1 rounded hover:bg-amber-50 transition-colors"
+                      title="Deactivate Member"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <X className="w-3.5 h-3.5" />
                     </button>
                   </td>
                 </tr>

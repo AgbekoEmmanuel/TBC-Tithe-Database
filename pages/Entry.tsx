@@ -2,12 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useDataStore, useAuthStore } from '../store';
 import { PaymentMethod, Transaction, Fellowship, FELLOWSHIP_PASTORS, Role } from '../types';
 import { getSundayDate } from '../lib/dateUtils';
-import { Calendar, Trash2, Filter, Play, Power, ArrowLeft, Upload, Users, X, UserPlus, Download } from 'lucide-react';
+import { Calendar, Trash2, Filter, Play, Power, ArrowLeft, Upload, Users, X, UserPlus, Download, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 
 export const Entry: React.FC = () => {
-  const { members, transactions, activeBatchId, bulkAddTransactions, deleteTransaction, addMember, selectedYear, setSelectedYear, updateBatchStatus } = useDataStore();
+  const { members, transactions, activeBatchId, bulkAddTransactions, reverseTransaction, addMember, selectedYear, setSelectedYear, updateBatchStatus } = useDataStore();
   const { user } = useAuthStore();
   const navigate = useNavigate();
 
@@ -125,7 +125,7 @@ export const Entry: React.FC = () => {
         const member = members.find(m => m.id === id);
         if (member) {
           entriesToSubmit.push({
-            id: `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            id: crypto.randomUUID(),
             batchId: activeBatchId || batchId,
             memberId: member.id,
             memberName: member.name,
@@ -765,23 +765,28 @@ export const Entry: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-3 md:px-4 py-2 md:py-2 text-right font-bold text-slate-800 text-sm md:text-sm">
-                      GH₵{txn.amount.toLocaleString()}
+                      <span className={txn.amount < 0 ? 'text-rose-500' : ''}>
+                        GH₵{txn.amount.toLocaleString()}
+                      </span>
+                      {txn.reversalOf && (
+                        <div className="text-[9px] text-rose-400 uppercase font-black tracking-tighter">REVERSED</div>
+                      )}
                     </td>
                     <td className="px-2 md:px-4 py-2 md:py-3 rounded-r-xl text-center">
                       {(
                         (txn.officerId === user?.id) ||
                         ((!txn.officerId || txn.officerId === 'sys') && user?.role === Role.SUPERVISOR)
-                      ) && (
+                      ) && !txn.reversalOf && txn.amount > 0 && (
                           <button
                             onClick={() => {
-                              if (window.confirm('Are you sure you want to delete this transaction?')) {
-                                deleteTransaction(txn.id);
+                              if (window.confirm('Are you sure you want to reverse this transaction? A reversal entry will be added to the ledger.')) {
+                                reverseTransaction(txn.id);
                               }
                             }}
-                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Delete Transaction"
+                            className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
+                            title="Reverse Transaction"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <RotateCcw className="w-4 h-4" />
                           </button>
                         )}
                     </td>

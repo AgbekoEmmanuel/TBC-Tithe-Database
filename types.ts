@@ -63,6 +63,7 @@ export interface Transaction {
   timestamp: string; // ISO string
   officerId: string;
   officerName?: string; // Display name of the officer who entered it
+  reversalOf?: string; // ID of the transaction being reversed
 }
 
 export interface Batch {

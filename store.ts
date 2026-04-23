@@ -120,8 +120,7 @@ interface DataState {
   fetchData: () => Promise<void>;
   addTransaction: (txn: Transaction) => Promise<void>;
   bulkAddTransactions: (txns: Transaction[]) => Promise<void>;
-  deleteTransaction: (id: string) => Promise<void>;
-  undoLastTransaction: () => void;
+  reverseTransaction: (id: string) => Promise<void>;
   updateBatchStatus: (status: Batch['status']) => Promise<void>;
   addMember: (member: Omit<Member, 'id' | 'ytdTotal' | 'status'>) => Promise<Member | null>;
   updateMember: (id: string, updates: Partial<Member>) => Promise<void>;
@@ -213,19 +212,26 @@ export const useDataStore = create<DataState>((set, get) => ({
         }
       }
 
+      const transactions = (txnsData || []).map((t: any) => ({
+        ...t,
+        batchId: t.batch_id,
+        memberId: t.member_id,
+        memberName: t.member_name,
+        officerId: t.officer_id,
+        officerName: t.officer_name,
+        reversalOf: t.reversal_of
+      })) as Transaction[];
+
       set({
-        members: (membersData || []).map((m: any) => ({
-          ...m,
-          ytdTotal: m.ytd_total || 0,
-        })) as Member[],
-        transactions: (txnsData || []).map((t: any) => ({
-          ...t,
-          batchId: t.batch_id,
-          memberId: t.member_id,
-          memberName: t.member_name,
-          officerId: t.officer_id,
-          officerName: t.officer_name,
-        })) as Transaction[],
+        members: (membersData || []).map((m: any) => {
+          const memberTxns = transactions.filter(t => t.memberId === m.id);
+          const ytdTotal = memberTxns.reduce((sum, t) => sum + (t.amount || 0), 0);
+          return {
+            ...m,
+            ytdTotal: ytdTotal,
+          };
+        }) as Member[],
+        transactions: transactions,
         batches: rawBatches.map((b: any) => ({
           ...b,
           totalSystem: b.total_system,
@@ -241,171 +247,103 @@ export const useDataStore = create<DataState>((set, get) => ({
   },
 
   addTransaction: async (txn) => {
-    // Optimistic Update
-    set((state) => {
-      const newTxns = [txn, ...state.transactions];
-      return {
-        transactions: newTxns,
-        members: state.members.map(m =>
-          m.id === txn.memberId
-            ? { ...m, ytdTotal: (m.ytdTotal || 0) + txn.amount }
-            : m
-        )
+    set({ isLoading: true });
+    try {
+      const dbTxn = {
+        id: txn.id,
+        batch_id: txn.batchId,
+        member_id: txn.memberId,
+        amount: txn.amount,
+        method: txn.method,
+        timestamp: txn.timestamp,
+        officer_id: txn.officerId,
+        member_name: txn.memberName,
+        fellowship: txn.fellowship,
+        reversal_of: txn.reversalOf
       };
-    });
 
-    // DB Insert
-    const dbTxn = {
-      id: txn.id,
-      batch_id: txn.batchId,
-      member_id: txn.memberId,
-      amount: txn.amount,
-      method: txn.method,
-      timestamp: txn.timestamp,
-      officer_id: txn.officerId,
-      member_name: txn.memberName,
-      fellowship: txn.fellowship
-    };
+      const { error } = await supabase.from('transactions').insert(dbTxn);
+      if (error) throw error;
 
-    const { error } = await supabase.from('transactions').insert(dbTxn);
-    if (error) {
-      console.error('Error adding transaction:', error);
-      // Revert if needed (omitted for brevity, but recommended for production)
-    } else {
-      // Also update member totals in DB
-      const member = get().members.find(m => m.id === txn.memberId);
-      if (member) {
-        await supabase.from('members').update({
-          ytd_total: member.ytdTotal
-        }).eq('id', member.id);
-      }
+      // Re-fetch to ensure local state matches DB exactly
+      await get().fetchData();
+    } catch (err: any) {
+      console.error('Error adding transaction:', err);
+      set({ error: err.message, isLoading: false });
+      throw err;
     }
   },
 
   bulkAddTransactions: async (txns) => {
     if (txns.length === 0) return;
+    set({ isLoading: true });
 
-    // Optimistic Update
-    set((state) => {
-      const newTxns = [...txns, ...state.transactions];
-      // Update member totals map for O(1) lookups
-      const totalsMap = new Map<string, number>();
-      txns.forEach(t => {
-        totalsMap.set(t.memberId, (totalsMap.get(t.memberId) || 0) + t.amount);
-      });
+    try {
+      const dbTxns = txns.map(txn => ({
+        id: txn.id,
+        batch_id: txn.batchId,
+        member_id: txn.memberId,
+        amount: txn.amount,
+        method: txn.method,
+        timestamp: txn.timestamp,
+        officer_id: txn.officerId,
+        member_name: txn.memberName,
+        fellowship: txn.fellowship,
+        reversal_of: txn.reversalOf
+      }));
 
-      return {
-        transactions: newTxns,
-        members: state.members.map(m => {
-          const addedAmount = totalsMap.get(m.id);
-          return addedAmount ? { ...m, ytdTotal: (m.ytdTotal || 0) + addedAmount } : m;
-        })
+      const { error } = await supabase.from('transactions').insert(dbTxns);
+      if (error) throw error;
+
+      // Re-fetch to sync
+      await get().fetchData();
+    } catch (err: any) {
+      console.error('Error adding bulk transactions:', err);
+      set({ error: err.message, isLoading: false });
+      throw err;
+    }
+  },
+
+  reverseTransaction: async (id: string) => {
+    const state = get();
+    const txnToReverse = state.transactions.find(t => t.id === id);
+    if (!txnToReverse) return;
+    if (txnToReverse.amount < 0 || txnToReverse.reversalOf) {
+      throw new Error("Cannot reverse a reversal transaction.");
+    }
+
+    set({ isLoading: true });
+
+    try {
+      const reversalTxn: Transaction = {
+        ...txnToReverse,
+        id: crypto.randomUUID(),
+        amount: -txnToReverse.amount,
+        timestamp: new Date().toISOString(),
+        reversalOf: txnToReverse.id
       };
-    });
 
-    // DB Insert
-    const dbTxns = txns.map(txn => ({
-      id: txn.id,
-      batch_id: txn.batchId,
-      member_id: txn.memberId,
-      amount: txn.amount,
-      method: txn.method,
-      timestamp: txn.timestamp,
-      officer_id: txn.officerId,
-      member_name: txn.memberName,
-      fellowship: txn.fellowship
-    }));
+      const dbReversal = {
+        id: reversalTxn.id,
+        batch_id: reversalTxn.batchId,
+        member_id: reversalTxn.memberId,
+        amount: reversalTxn.amount,
+        method: reversalTxn.method,
+        timestamp: reversalTxn.timestamp,
+        officer_id: state.user?.id || 'sys',
+        member_name: reversalTxn.memberName,
+        fellowship: reversalTxn.fellowship,
+        reversal_of: reversalTxn.reversalOf
+      };
 
-    const { error } = await supabase.from('transactions').insert(dbTxns);
+      const { error } = await supabase.from('transactions').insert(dbReversal);
+      if (error) throw error;
 
-    if (error) {
-      console.error('Error adding bulk transactions:', error);
-      // Revert logic would go here (fetchData)
       await get().fetchData();
-      throw new Error(`Database Error: ${error.message}`);
-    } else {
-      // Update member totals in DB
-      const uniqueMemberIds = [...new Set(txns.map(t => t.memberId))];
-
-      const memberUpdates = uniqueMemberIds.map(async (memberId) => {
-        const member = get().members.find(m => m.id === memberId);
-        if (member) {
-          return supabase.from('members').update({
-            ytd_total: member.ytdTotal
-          }).eq('id', memberId);
-        }
-      });
-
-      await Promise.all(memberUpdates);
-    }
-  },
-
-  undoLastTransaction: async () => {
-    const state = get();
-    const [removed, ...rest] = state.transactions;
-    if (!removed) return;
-
-    // Optimistic Revert
-    set({ transactions: rest });
-
-    // DB Delete
-    const { error } = await supabase.from('transactions').delete().eq('id', removed.id);
-    if (error) {
-      console.error('Error undoing transaction:', error);
-    } else {
-      // Revert member total
-      const member = state.members.find(m => m.id === removed.memberId);
-      if (member) {
-        await supabase.from('members').update({
-          ytdTotal: Math.max(0, (member.ytdTotal || 0) - removed.amount)
-          // Date revert is harder without history, ignoring for now
-        }).eq('id', member.id);
-
-        // Fix local member state too
-        set(s => ({
-          members: s.members.map(m => m.id === member.id ? { ...m, ytdTotal: m.ytdTotal - removed.amount } : m)
-        }));
-      }
-    }
-  },
-
-  deleteTransaction: async (id: string) => {
-    const state = get();
-    const txnToDelete = state.transactions.find(t => t.id === id);
-    if (!txnToDelete) return;
-
-    // Optimistic Update
-    set((s) => ({
-      transactions: s.transactions.filter(t => t.id !== id),
-      members: s.members.map(m =>
-        m.id === txnToDelete.memberId
-          ? { ...m, ytdTotal: Math.max(0, (m.ytdTotal || 0) - txnToDelete.amount) }
-          : m
-      )
-    }));
-
-    // DB Delete
-    const { error } = await supabase.from('transactions').delete().eq('id', id);
-    if (error) {
-      console.error('Error deleting transaction:', error);
-      // Revert logic (fetch data to resync)
-      await get().fetchData();
-    } else {
-      // Sync member total in DB
-      const member = state.members.find(m => m.id === txnToDelete.memberId);
-      if (member) {
-        // We calculate the new total based on current optimistic state (which is accurate enough locally)
-        // Or better, fetch the member YTD from DB or recalc sum.
-        // For simplicity, we just debit the member ytd_total in DB same as local.
-        // Note: Ideally we should use an RPC or re-sum, but decrementing fits the pattern.
-        // Actually, let's just update the member with the new value we calculated locally.
-        const currentMember = get().members.find(m => m.id === member.id);
-        if (currentMember) {
-          await supabase.from('members').update({
-            ytd_total: currentMember.ytdTotal
-          }).eq('id', member.id);
-        }
-      }
+    } catch (err: any) {
+      console.error('Error reversing transaction:', err);
+      set({ error: err.message, isLoading: false });
+      throw err;
     }
   },
 
@@ -489,60 +427,29 @@ export const useDataStore = create<DataState>((set, get) => ({
 
       if (memberError) throw memberError;
 
-      // Update Transactions (if needed)
-      if (updates.name || updates.fellowship) {
-        const txnUpdates: any = {};
-        if (updates.name) txnUpdates.member_name = updates.name;
-        if (updates.fellowship) txnUpdates.fellowship = updates.fellowship;
-
-        const { error: txnError } = await supabase
-          .from('transactions')
-          .update(txnUpdates)
-          .eq('member_id', id);
-
-        if (txnError) throw txnError;
-      }
-
+      // Note: We no longer update historical transactions when a member's name changes
+      // to preserve the integrity of the original ledger records.
     } catch (err) {
       console.error('Error updating member:', err);
-      // Revert logic would go here
+      set({ error: (err as any).message });
     }
   },
 
   deleteMember: async (id: string) => {
-    // 1. Optimistic Update
-    const memberToDelete = get().members.find(m => m.id === id);
-    if (!memberToDelete) return;
-
-    set((state) => ({
-      members: state.members.filter(m => m.id !== id),
-      // Filter out transactions for this member to keep UI sync
-      transactions: state.transactions.filter(t => t.memberId !== id)
-    }));
-
-    // 2. DB Delete
     try {
-      // Delete transactions first (Foreign Key Constraint usually requires this, 
-      // though CASCADE might be set, it's safer to be explicit)
-      const { error: txnError } = await supabase
-        .from('transactions')
-        .delete()
-        .eq('member_id', id);
-
-      if (txnError) throw txnError;
-
-      // Delete Member
-      const { error: memberError } = await supabase
+      // We do NOT delete members or their transactions to maintain financial integrity.
+      // Instead, we mark the member as INACTIVE.
+      const { error } = await supabase
         .from('members')
-        .delete()
+        .update({ status: 'PROVISIONAL' }) // Or 'INACTIVE' if we had that status
         .eq('id', id);
 
-      if (memberError) throw memberError;
+      if (error) throw error;
 
-    } catch (err: any) {
-      console.error('Error deleting member:', err);
-      // Revert logic (simplified: fetch data again)
       await get().fetchData();
+    } catch (err: any) {
+      console.error('Error deactivating member:', err);
+      set({ error: err.message });
     }
   },
 
@@ -565,7 +472,6 @@ export const useDataStore = create<DataState>((set, get) => ({
       });
 
       const resolvedMembers = [];
-      const duplicateRemovalPromises: Promise<any>[] = [];
 
       for (const m of members) {
         const normalizedName = m.name?.trim().toUpperCase();
@@ -574,37 +480,12 @@ export const useDataStore = create<DataState>((set, get) => ({
         if (normalizedName && nameToMembersMap.has(normalizedName)) {
           const matches = nameToMembersMap.get(normalizedName)!;
           if (matches.length > 0) {
-            // Survivor is the FIRST match (usually the oldest or arbitrary stable one)
+            // Survivor is the FIRST match. We do NOT merge or delete anymore.
             const survivor = matches[0];
             finalId = survivor.id;
-
-            // If there are duplicates (Victims), merge and delete them
-            if (matches.length > 1) {
-              const victimIds = matches.slice(1).map(v => v.id);
-
-              const cleanup = async () => {
-                // 1. Reassign transactions from victims to survivor
-                await supabase
-                  .from('transactions')
-                  .update({ member_id: survivor.id })
-                  .in('member_id', victimIds);
-
-                // 2. Delete victims
-                await supabase
-                  .from('members')
-                  .delete()
-                  .in('id', victimIds);
-              };
-              duplicateRemovalPromises.push(cleanup());
-            }
           }
         }
         resolvedMembers.push({ ...m, id: finalId });
-      }
-
-      // Wait for cleanups to finish
-      if (duplicateRemovalPromises.length > 0) {
-        await Promise.all(duplicateRemovalPromises);
       }
 
       // Update transactions with resolved IDs
@@ -617,14 +498,14 @@ export const useDataStore = create<DataState>((set, get) => ({
         return t;
       });
 
-      // 1.5 Upsert Members
+      // 1.5 Upsert Members (only basic info)
       const dbMembers = resolvedMembers.map(m => ({
         id: m.id,
         name: m.name,
         phone: m.phone,
         fellowship: m.fellowship,
-        status: m.status,
-        ytd_total: m.ytdTotal !== undefined ? m.ytdTotal : 0 // Force update from import
+        status: m.status
+        // ytd_total is intentionally omitted to avoid overwriting derived data
       }));
 
       const { error: memError } = await supabase.from('members').upsert(dbMembers);
@@ -648,14 +529,6 @@ export const useDataStore = create<DataState>((set, get) => ({
       if (dbBatches.length > 0) {
         const { error: batchError } = await supabase.from('batches').upsert(dbBatches);
         if (batchError) throw batchError;
-
-        // 1.8 Delete existing transactions for these batches to prevent duplication (Overwrite logic)
-        const { error: deleteError } = await supabase
-          .from('transactions')
-          .delete()
-          .in('batch_id', uniqueBatchIds);
-
-        if (deleteError) throw deleteError;
       }
 
       // 2. Insert Transactions (Chunked)
@@ -674,8 +547,14 @@ export const useDataStore = create<DataState>((set, get) => ({
       const chunkSize = 500;
       for (let i = 0; i < dbTransactions.length; i += chunkSize) {
         const chunk = dbTransactions.slice(i, i + chunkSize);
-        const { error: txnError } = await supabase.from('transactions').upsert(chunk);
-        if (txnError) throw txnError;
+        // Using insert() instead of upsert() to prevent overwriting
+        const { error: txnError } = await supabase.from('transactions').insert(chunk);
+        if (txnError) {
+          // If some already exist, we just log and continue or fail gracefully
+          console.warn('Some transactions might already exist during import:', txnError);
+          // If it's a conflict error, we might want to skip or let it throw
+          if (txnError.code !== '23505') throw txnError; 
+        }
       }
 
       // 3. Refresh State
