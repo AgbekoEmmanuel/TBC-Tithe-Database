@@ -18,7 +18,6 @@ export enum Fellowship {
   Balance = 'Balance',
   Ephesus = 'Ephesus',
   Smyrna = 'Smyrna',
-  Sardis = 'Sardis',
   Pergamos = 'Pergamos',
   Berea = 'Berea',
   Philadelphia = 'Philadelphia'
@@ -31,7 +30,6 @@ export const FELLOWSHIP_PASTORS: Record<Fellowship, string> = {
   [Fellowship.Balance]: 'Ps Brandon',
   [Fellowship.Ephesus]: 'Senior Prophet Moses',
   [Fellowship.Smyrna]: 'Ps Collins',
-  [Fellowship.Sardis]: 'Ps Jamil',
   [Fellowship.Pergamos]: 'Ps Daniel',
   [Fellowship.Berea]: 'Ps Dominic',
   [Fellowship.Philadelphia]: 'Ps Elisha'

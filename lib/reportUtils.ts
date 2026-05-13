@@ -37,7 +37,7 @@ export const generatePDFReport = async (
     // Group by Fellowship
     const ALL_FELLOWSHIPS = [
         'Thyatira', 'Philippi', 'Laodicea', 'Balance', 'Ephesus',
-        'Smyrna', 'Sardis', 'Pergamos', 'Berea', 'Philadelphia'
+        'Smyrna', 'Pergamos', 'Berea', 'Philadelphia'
     ];
 
     const fellowshipMap: Record<string, number> = {};

@@ -37,12 +37,7 @@ export const FELLOWSHIP_COLORS: Record<Fellowship, { bg: string; text: string; b
         border: 'border-purple-100',
         hex: '#a855f7'
     },
-    [Fellowship.Sardis]: {
-        bg: 'bg-pink-50',
-        text: 'text-pink-700',
-        border: 'border-pink-100',
-        hex: '#ec4899'
-    },
+
     [Fellowship.Pergamos]: {
         bg: 'bg-cyan-50',
         text: 'text-cyan-700',

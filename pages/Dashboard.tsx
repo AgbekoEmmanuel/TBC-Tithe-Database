@@ -44,7 +44,7 @@ export const Dashboard: React.FC = () => {
   const LOGO_URL = (new URL('../src/images/TBC logo full.png', import.meta.url)).href;
   const ALL_FELLOWSHIPS = [
     'Thyatira', 'Philippi', 'Laodicea', 'Balance', 'Ephesus',
-    'Smyrna', 'Sardis', 'Pergamos', 'Berea', 'Philadelphia'
+    'Smyrna', 'Pergamos', 'Berea', 'Philadelphia'
   ];
 
   const handleFellowshipReport = async () => {
