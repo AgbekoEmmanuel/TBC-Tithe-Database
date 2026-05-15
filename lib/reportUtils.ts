@@ -408,14 +408,15 @@ export const generatePDFReport = async (
     doc.save(fileName);
 };
 
-// ─── Annual Summary Report ────────────────────────────────────────────────────
-export const generateAnnualReport = async (
+// ─── Periodic Summary Report (Annual, Half Year, Quarterly) ─────────────────
+export const generatePeriodicReport = async (
     transactions: Transaction[],
-    year: string,
+    periodName: string,
     monthlyTotals: { name: string; total: number }[],
+    fellowshipTotals: { name: string; total: number }[],
     logoUrl: string
 ) => {
-    const grandTotal = monthlyTotals.reduce((s, m) => s + m.total, 0);
+    const grandTotalMonthly = monthlyTotals.reduce((s, m) => s + m.total, 0);
     const doc = new jsPDF();
 
     // --- Font Loading ---
@@ -455,25 +456,26 @@ export const generateAnnualReport = async (
     doc.setTextColor(30, 41, 59);
     doc.setFontSize(10); doc.setFont(rf, 'bold');
     doc.text('The Tithe Department', 105, 33, { align: 'center' });
-    doc.setFontSize(24); doc.setFont(rf, 'bold');
-    doc.text('ANNUAL FINANCIAL REPORT', 105, 43, { align: 'center' });
+    doc.setFontSize(22); doc.setFont(rf, 'bold');
+    doc.text('PERIODIC FINANCIAL REPORT', 105, 43, { align: 'center' });
     doc.setFontSize(12); doc.setTextColor(100, 116, 139); doc.setFont(rf, 'normal');
-    doc.text(`FISCAL YEAR ${year}`, 105, 51, { align: 'center' });
+    doc.text(periodName.toUpperCase(), 105, 51, { align: 'center' });
 
-    // --- Monthly Totals Table ---
-    const tableBody = monthlyTotals.map(m => [
-        m.name.toUpperCase(),
-        `GHS ${m.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    // --- Fellowship Totals Table ---
+    const fellowshipBody = fellowshipTotals.map(f => [
+        f.name.toUpperCase(),
+        `GHS ${f.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     ]);
-    tableBody.push([
+    const grandTotalFellowship = fellowshipTotals.reduce((s, f) => s + f.total, 0);
+    fellowshipBody.push([
         'GRAND TOTAL',
-        `GHS ${grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        `GHS ${grandTotalFellowship.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     ]);
 
     autoTable(doc, {
-        startY: 65,
-        head: [['MONTH', 'AMOUNT COLLECTED']],
-        body: tableBody,
+        startY: 60,
+        head: [['FELLOWSHIP', 'AMOUNT COLLECTED']],
+        body: fellowshipBody,
         headStyles: {
             fillColor: [30, 41, 59],
             textColor: [255, 255, 255],
@@ -495,45 +497,92 @@ export const generateAnnualReport = async (
         theme: 'grid',
         margin: { left: 15, right: 15 },
         didParseCell: (data) => {
-            // Bold grand total row
-            if (data.row.index === tableBody.length - 1 && data.section === 'body') {
+            if (data.row.index === fellowshipBody.length - 1 && data.section === 'body') {
                 data.cell.styles.fontStyle = 'bold';
                 data.cell.styles.fillColor = [241, 245, 249];
             }
         }
     });
 
-    // --- Footer page 1 ---
+    // --- Monthly Totals Table ---
+    const monthlyStartY = (doc as any).lastAutoTable.finalY + 10;
+    const monthlyBody = monthlyTotals.map(m => [
+        m.name.toUpperCase(),
+        `GHS ${m.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    ]);
+    monthlyBody.push([
+        'GRAND TOTAL',
+        `GHS ${grandTotalMonthly.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    ]);
+
+    // Check if we need a new page for the Monthly table
+    if (monthlyStartY > 220) {
+        doc.addPage();
+    }
+
+    autoTable(doc, {
+        startY: monthlyStartY > 220 ? 20 : monthlyStartY,
+        head: [['MONTH', 'AMOUNT COLLECTED']],
+        body: monthlyBody,
+        headStyles: {
+            fillColor: [30, 41, 59],
+            textColor: [255, 255, 255],
+            fontStyle: 'bold',
+            font: rf,
+            halign: 'left'
+        },
+        bodyStyles: {
+            textColor: [51, 65, 85],
+            fontSize: 10,
+            font: rf,
+            halign: 'left'
+        },
+        columnStyles: {
+            0: { cellWidth: 100 },
+            1: { cellWidth: 80, halign: 'right', fontStyle: 'bold' }
+        },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        theme: 'grid',
+        margin: { left: 15, right: 15 },
+        didParseCell: (data) => {
+            if (data.row.index === monthlyBody.length - 1 && data.section === 'body') {
+                data.cell.styles.fontStyle = 'bold';
+                data.cell.styles.fillColor = [241, 245, 249];
+            }
+        }
+    });
+
+    // --- Footer page 1 (or current page) ---
     const dateStr = new Date().toLocaleString();
     doc.setFontSize(8); doc.setTextColor(150);
     doc.text(`Generated on: ${dateStr}`, 15, 290);
     doc.text('The Tithe Department', 195, 290, { align: 'right' });
 
-    // ── PAGE 2: Monthly Bar Chart ──────────────────────────────────────────────
+    // ── GRAPHS PAGE ──────────────────────────────────────────────
     doc.addPage();
 
+    // 1. Fellowship Trends Graph
     doc.setFontSize(14); doc.setTextColor(30, 41, 59); doc.setFont(rf, 'bold');
-    doc.text(`Monthly Collection Trends — ${year}`, 15, 20);
+    doc.text(`Fellowship Contributions — ${periodName}`, 15, 20);
 
-    const chartStartY = 35;
-    const chartHeight = 100;
+    const fChartStartY = 35;
+    const fChartHeight = 80;
     const chartWidth = 170;
     const startX = 28;
 
-    // Axes
+    // Axes for Fellowship Chart
     doc.setDrawColor(200, 200, 200);
-    doc.line(startX, chartStartY, startX, chartStartY + chartHeight);
-    doc.line(startX, chartStartY + chartHeight, startX + chartWidth, chartStartY + chartHeight);
+    doc.line(startX, fChartStartY, startX, fChartStartY + fChartHeight);
+    doc.line(startX, fChartStartY + fChartHeight, startX + chartWidth, fChartStartY + fChartHeight);
 
-    const maxVal = Math.max(...monthlyTotals.map(m => m.total), 1);
-    const yMax = Math.ceil(maxVal / 1000) * 1000 || 1000;
+    const maxFVal = Math.max(...fellowshipTotals.map(f => f.total), 1);
+    const yFMax = Math.ceil(maxFVal / 1000) * 1000 || 1000;
     const steps = 4;
 
-    // Y-axis labels + grid lines
     doc.setFontSize(7); doc.setTextColor(150); doc.setFont(rf, 'normal');
     for (let i = 0; i <= steps; i++) {
-        const val = (yMax / steps) * i;
-        const yPos = (chartStartY + chartHeight) - ((val / yMax) * chartHeight);
+        const val = (yFMax / steps) * i;
+        const yPos = (fChartStartY + fChartHeight) - ((val / yFMax) * fChartHeight);
         doc.text(`${val >= 1000 ? (val / 1000).toFixed(1) + 'k' : val}`, startX - 2, yPos + 1, { align: 'right' });
         if (i > 0) {
             doc.setDrawColor(240, 240, 240);
@@ -541,29 +590,80 @@ export const generateAnnualReport = async (
         }
     }
 
-    // Bars
+    const BAR_COLORS: [number, number, number][] = [
+        [99, 102, 241], [16, 185, 129], [245, 158, 11],
+        [239, 68, 68],  [14, 165, 233], [168, 85, 247],
+        [249, 115, 22], [20, 184, 166], [236, 72, 153], [132, 204, 22]
+    ];
+
+    const fBarWidth = (chartWidth / fellowshipTotals.length) - 2;
+    const fGap = 2;
+
+    fellowshipTotals.forEach((f, i) => {
+        const x = startX + i * (fBarWidth + fGap) + fGap / 2;
+        if (f.total > 0) {
+            const h = (f.total / yFMax) * fChartHeight;
+            const c = BAR_COLORS[i % BAR_COLORS.length];
+            doc.setFillColor(c[0], c[1], c[2]);
+            doc.rect(x, fChartStartY + fChartHeight - h, fBarWidth, h, 'F');
+            
+            const label = f.total >= 1000 ? (f.total / 1000).toFixed(1) + 'k' : f.total.toString();
+            doc.setFontSize(5.5);
+            doc.setTextColor(30, 41, 59);
+            doc.text(label, x + fBarWidth / 2, fChartStartY + fChartHeight - h - 2, { align: 'center' });
+        }
+        doc.setFontSize(6); doc.setTextColor(80); doc.setFont(rf, 'normal');
+        const name = f.name.length > 6 ? f.name.substring(0, 5) + '.' : f.name;
+        doc.text(name, x + fBarWidth / 2, fChartStartY + fChartHeight + 5, { align: 'center' });
+    });
+
+
+    // 2. Monthly Trends Graph
+    const mChartStartY = fChartStartY + fChartHeight + 40;
+    const mChartHeight = 80;
+
+    doc.setFontSize(14); doc.setTextColor(30, 41, 59); doc.setFont(rf, 'bold');
+    doc.text(`Monthly Collection Trends — ${periodName}`, 15, mChartStartY - 15);
+
+    // Axes
+    doc.setDrawColor(200, 200, 200);
+    doc.line(startX, mChartStartY, startX, mChartStartY + mChartHeight);
+    doc.line(startX, mChartStartY + mChartHeight, startX + chartWidth, mChartStartY + mChartHeight);
+
+    const maxMVal = Math.max(...monthlyTotals.map(m => m.total), 1);
+    const yMMax = Math.ceil(maxMVal / 1000) * 1000 || 1000;
+
+    doc.setFontSize(7); doc.setTextColor(150); doc.setFont(rf, 'normal');
+    for (let i = 0; i <= steps; i++) {
+        const val = (yMMax / steps) * i;
+        const yPos = (mChartStartY + mChartHeight) - ((val / yMMax) * mChartHeight);
+        doc.text(`${val >= 1000 ? (val / 1000).toFixed(1) + 'k' : val}`, startX - 2, yPos + 1, { align: 'right' });
+        if (i > 0) {
+            doc.setDrawColor(240, 240, 240);
+            doc.line(startX, yPos, startX + chartWidth, yPos);
+        }
+    }
+
     const MONTH_COLOR: [number, number, number] = [99, 102, 241]; // indigo
-    const barWidth = chartWidth / monthlyTotals.length - 2;
-    const gap = 2;
+    const mBarWidth = chartWidth / monthlyTotals.length - 2;
+    const mGap = 2;
 
     monthlyTotals.forEach((m, i) => {
-        const x = startX + i * (barWidth + gap) + gap / 2;
+        const x = startX + i * (mBarWidth + mGap) + mGap / 2;
 
         if (m.total > 0) {
-            const h = (m.total / yMax) * chartHeight;
+            const h = (m.total / yMMax) * mChartHeight;
             doc.setFillColor(MONTH_COLOR[0], MONTH_COLOR[1], MONTH_COLOR[2]);
-            doc.rect(x, chartStartY + chartHeight - h, barWidth, h, 'F');
+            doc.rect(x, mChartStartY + mChartHeight - h, mBarWidth, h, 'F');
 
-            // Amount on top of bar
             const label = m.total >= 1000 ? (m.total / 1000).toFixed(1) + 'k' : m.total.toString();
             doc.setFontSize(5.5);
             doc.setTextColor(30, 41, 59);
-            doc.text(label, x + barWidth / 2, chartStartY + chartHeight - h - 2, { align: 'center' });
+            doc.text(label, x + mBarWidth / 2, mChartStartY + mChartHeight - h - 2, { align: 'center' });
         }
 
-        // Month label below bar
         doc.setFontSize(6); doc.setTextColor(80); doc.setFont(rf, 'normal');
-        doc.text(m.name.substring(0, 3).toUpperCase(), x + barWidth / 2, chartStartY + chartHeight + 5, { align: 'center' });
+        doc.text(m.name.substring(0, 3).toUpperCase(), x + mBarWidth / 2, mChartStartY + mChartHeight + 5, { align: 'center' });
     });
 
     // Footer page 2
@@ -571,7 +671,7 @@ export const generateAnnualReport = async (
     doc.text(`Generated on: ${dateStr}`, 15, 290);
     doc.text('The Tithe Department', 195, 290, { align: 'right' });
 
-    doc.save(`Annual Tithe Report (${year}).pdf`);
+    doc.save(`Tithe Report - ${periodName}.pdf`);
 };
 
 // ─── Fellowship Annual Report ─────────────────────────────────────────────────
