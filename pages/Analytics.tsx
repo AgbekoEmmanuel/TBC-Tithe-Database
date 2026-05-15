@@ -172,6 +172,9 @@ export const Analytics: React.FC = () => {
   const handleGenerateReport = async () => {
     setIsGenerating(true);
     try {
+      const specialPeriods = ['ALL_MONTHS', 'Q1', 'Q2', 'Q3', 'Q4', 'H1', 'H2'];
+      const isPeriod = specialPeriods.includes(reportFilter.month);
+
       if (reportFilter.month === 'ALL_MONTHS') {
         // Annual summary report
         const { generateAnnualReport } = await import('../lib/reportUtils');
@@ -188,6 +191,11 @@ export const Analytics: React.FC = () => {
         });
 
         await generateAnnualReport(yearTxns, reportFilter.year, monthlyTotals, LOGO_URL);
+      } else if (['Q1', 'Q2', 'Q3', 'Q4', 'H1', 'H2'].includes(reportFilter.month)) {
+        const { generatePeriodReport } = await import('../lib/reportUtils');
+        const year = parseInt(reportFilter.year);
+        const yearTxns = transactions.filter(t => new Date(t.timestamp).getFullYear() === year);
+        await generatePeriodReport(yearTxns, reportFilter.month, reportFilter.year, LOGO_URL);
       } else {
         // Existing per-month / per-week report
         const { generatePDFReport } = await import('../lib/reportUtils');
@@ -265,15 +273,28 @@ export const Analytics: React.FC = () => {
                     value={reportFilter.month}
                     onChange={(e) => {
                       const val = e.target.value;
-                      setReportFilter({ ...reportFilter, month: val, week: val === 'ALL_MONTHS' ? 'All' : reportFilter.week });
+                      const specialPeriods = ['ALL_MONTHS', 'Q1', 'Q2', 'Q3', 'Q4', 'H1', 'H2'];
+                      setReportFilter({ ...reportFilter, month: val, week: specialPeriods.includes(val) ? 'All' : reportFilter.week });
                     }}
                     className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700"
                   >
                     <option value="ALL_MONTHS">All Months</option>
-                    {MONTHS.map(m => <option key={m} value={m}>{m}</option>)}
+                    <optgroup label="Quarters">
+                      <option value="Q1">Quarter 1 (Jan-Mar)</option>
+                      <option value="Q2">Quarter 2 (Apr-Jun)</option>
+                      <option value="Q3">Quarter 3 (Jul-Sep)</option>
+                      <option value="Q4">Quarter 4 (Oct-Dec)</option>
+                    </optgroup>
+                    <optgroup label="Half Years">
+                      <option value="H1">First Half (Jan-Jun)</option>
+                      <option value="H2">Second Half (Jul-Dec)</option>
+                    </optgroup>
+                    <optgroup label="Months">
+                      {MONTHS.map(m => <option key={m} value={m}>{m}</option>)}
+                    </optgroup>
                   </select>
                 </div>
-                {reportFilter.month !== 'ALL_MONTHS' && (
+                {!['ALL_MONTHS', 'Q1', 'Q2', 'Q3', 'Q4', 'H1', 'H2'].includes(reportFilter.month) && (
                   <div className="w-1/3">
                     <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Week</label>
                     <select

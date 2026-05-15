@@ -754,3 +754,224 @@ export const generateFellowshipAnnualReport = async (
 
     doc.save(`Fellowship Annual Report (${year}).pdf`);
 };
+
+// ─── Period Report (Quarterly / Half-Year) ──────────────────────────────────
+export const generatePeriodReport = async (
+    yearTxns: Transaction[],
+    periodKey: string,
+    year: string,
+    logoUrl: string
+) => {
+    const doc = new jsPDF({ orientation: 'landscape' });
+    
+    // Period Configuration
+    const PERIOD_MAP: Record<string, { label: string, months: number[], names: string[] }> = {
+        'Q1': { label: 'Quarter 1 (Jan - Mar)', months: [0, 1, 2], names: ['Jan', 'Feb', 'Mar'] },
+        'Q2': { label: 'Quarter 2 (Apr - Jun)', months: [3, 4, 5], names: ['Apr', 'May', 'Jun'] },
+        'Q3': { label: 'Quarter 3 (Jul - Sep)', months: [6, 7, 8], names: ['Jul', 'Aug', 'Sep'] },
+        'Q4': { label: 'Quarter 4 (Oct - Dec)', months: [9, 10, 11], names: ['Oct', 'Nov', 'Dec'] },
+        'H1': { label: 'First Half (Jan - Jun)', months: [0, 1, 2, 3, 4, 5], names: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'] },
+        'H2': { label: 'Second Half (Jul - Dec)', months: [6, 7, 8, 9, 10, 11], names: ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] },
+    };
+    
+    const config = PERIOD_MAP[periodKey];
+    if (!config) return;
+
+    // Filter txns to only this period
+    const periodTxns = yearTxns.filter(t => config.months.includes(new Date(t.timestamp).getMonth()));
+
+    // Fellowships
+    const ALL_FELLOWSHIPS = [
+        'Thyatira', 'Philippi', 'Laodicea', 'Balance', 'Ephesus',
+        'Smyrna', 'Pergamos', 'Berea', 'Philadelphia'
+    ];
+
+    // Data Structure: fellowship -> { [monthIdx]: amount }
+    const data: Record<string, number[]> = {};
+    ALL_FELLOWSHIPS.forEach(f => {
+        data[f] = config.months.map(() => 0);
+    });
+
+    periodTxns.forEach(t => {
+        const m = new Date(t.timestamp).getMonth();
+        const colIdx = config.months.indexOf(m);
+        if (colIdx !== -1) {
+            const f = t.fellowship;
+            if (!data[f]) {
+                 data[f] = config.months.map(() => 0);
+            }
+            data[f][colIdx] += t.amount;
+        }
+    });
+
+    const fmt = (n: number) => n > 0
+        ? `GHS ${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        : '-';
+
+    // --- Font Loading ---
+    try {
+        const loadFont = async (url: string) => {
+            const res = await fetch(url);
+            const blob = await res.blob();
+            const reader = new FileReader();
+            return new Promise<string>((resolve) => {
+                reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+                reader.readAsDataURL(blob);
+            });
+        };
+        const [reg, bold] = await Promise.all([
+            loadFont('https://raw.githubusercontent.com/google/fonts/main/ofl/poppins/Poppins-Regular.ttf'),
+            loadFont('https://raw.githubusercontent.com/google/fonts/main/ofl/poppins/Poppins-Bold.ttf')
+        ]);
+        doc.addFileToVFS('Poppins-Regular.ttf', reg);
+        doc.addFont('Poppins-Regular.ttf', 'Poppins', 'normal');
+        doc.addFileToVFS('Poppins-Bold.ttf', bold);
+        doc.addFont('Poppins-Bold.ttf', 'Poppins', 'bold');
+    } catch { /* fallback */ }
+
+    const rf = doc.getFontList().Poppins ? 'Poppins' : 'helvetica';
+
+    // --- Logo ---
+    try {
+        const props = doc.getImageProperties(logoUrl);
+        const w = 30; const h = (props.height * w) / props.width;
+        doc.addImage(logoUrl, 'PNG', 14, 10, w, h);
+    } catch { /* ignore */ }
+
+    // --- Header ---
+    doc.setTextColor(30, 41, 59);
+    doc.setFontSize(9); doc.setFont(rf, 'bold');
+    doc.text('The Tithe Department', 148.5, 16, { align: 'center' });
+    doc.setFontSize(20); doc.setFont(rf, 'bold');
+    doc.text('PERIOD FINANCIAL REPORT', 148.5, 25, { align: 'center' });
+    doc.setFontSize(10); doc.setTextColor(100, 116, 139); doc.setFont(rf, 'normal');
+    doc.text(`${config.label.toUpperCase()} ${year}`, 148.5, 32, { align: 'center' });
+
+    // --- Table ---
+    const head = [['FELLOWSHIP', ...config.names.map(m => m.toUpperCase()), 'PERIOD TOTAL']];
+    
+    const fellowshipsList = Object.keys(data);
+    const rowTotals = fellowshipsList.map(f => data[f].reduce((s, v) => s + v, 0));
+    
+    // Sort fellowships by period total descending
+    const sortedIndices = rowTotals.map((val, idx) => ({val, idx})).sort((a,b) => b.val - a.val);
+    const sortedFellowships = sortedIndices.map(item => fellowshipsList[item.idx]);
+
+    const grandMonthlyTotals = config.months.map((_, colIdx) => 
+        sortedFellowships.reduce((sum, f) => sum + data[f][colIdx], 0)
+    );
+    const grandTotal = rowTotals.reduce((s, v) => s + v, 0);
+
+    const body = sortedFellowships.map(f => {
+        const fData = data[f];
+        const rTotal = fData.reduce((s, v) => s + v, 0);
+        return [f, ...fData.map(fmt), fmt(rTotal)];
+    });
+
+    body.push(['GRAND TOTAL', ...grandMonthlyTotals.map(fmt), fmt(grandTotal)]);
+
+    const colsCount = config.names.length + 2;
+    const colStyles: any = { 0: { halign: 'left', fontStyle: 'bold', cellWidth: 40 } };
+    colStyles[colsCount - 1] = { fontStyle: 'bold', fillColor: [241, 245, 249] }; // Total column
+
+    autoTable(doc, {
+        startY: 38,
+        head,
+        body,
+        headStyles: {
+            fillColor: [30, 41, 59],
+            textColor: [255, 255, 255],
+            fontStyle: 'bold',
+            font: rf,
+            fontSize: 8,
+            halign: 'center'
+        },
+        bodyStyles: {
+            textColor: [51, 65, 85],
+            fontSize: 8,
+            font: rf,
+            halign: 'right'
+        },
+        columnStyles: colStyles,
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        theme: 'grid',
+        margin: { left: 14, right: 14 },
+        didParseCell: (cellData) => {
+            if (cellData.row.index === body.length - 1 && cellData.section === 'body') {
+                cellData.cell.styles.fontStyle = 'bold';
+                cellData.cell.styles.fillColor = [30, 41, 59];
+                cellData.cell.styles.textColor = [255, 255, 255];
+            }
+        }
+    });
+
+    // --- Footer page 1 ---
+    const dateStr = new Date().toLocaleString();
+    doc.setFontSize(7); doc.setTextColor(150);
+    doc.text(`Generated on: ${dateStr}`, 14, 200);
+    doc.text('The Tithe Department', 283, 200, { align: 'right' });
+
+    // ── PAGE 2: Bar Chart ────────────────────────────────────────────────────────
+    doc.addPage();
+    doc.setFontSize(13); doc.setTextColor(30, 41, 59); doc.setFont(rf, 'bold');
+    doc.text(`Fellowship Totals — ${config.label} ${year}`, 15, 18);
+
+    const cY = 30; const cH = 110; const cW = 250; const sX = 35;
+    
+    // Axes
+    doc.setDrawColor(200, 200, 200);
+    doc.line(sX, cY, sX, cY + cH);
+    doc.line(sX, cY + cH, sX + cW, cY + cH);
+
+    const chartData = sortedFellowships.map(f => ({
+        name: f,
+        total: data[f].reduce((s, v) => s + v, 0)
+    }));
+
+    const maxVal = Math.max(...chartData.map(d => d.total), 1);
+    const yMax = Math.ceil(maxVal / 1000) * 1000 || 1000;
+    const steps = 4;
+
+    doc.setFontSize(6); doc.setTextColor(150); doc.setFont(rf, 'normal');
+    for (let i = 0; i <= steps; i++) {
+        const val = (yMax / steps) * i;
+        const yPos = (cY + cH) - ((val / yMax) * cH);
+        doc.text(`${val >= 1000 ? (val / 1000).toFixed(1) + 'k' : val}`, sX - 2, yPos + 1, { align: 'right' });
+        if (i > 0) {
+            doc.setDrawColor(240, 240, 240);
+            doc.line(sX, yPos, sX + cW, yPos);
+        }
+    }
+
+    const BAR_COLORS: [number, number, number][] = [
+        [99, 102, 241], [16, 185, 129], [245, 158, 11],
+        [239, 68, 68],  [14, 165, 233], [168, 85, 247],
+        [249, 115, 22], [20, 184, 166], [236, 72, 153], [132, 204, 22]
+    ];
+
+    const bw = cW / chartData.length - 4;
+    chartData.forEach((d, i) => {
+        const x = sX + i * (bw + 4) + 2;
+        if (d.total > 0) {
+            const h = (d.total / yMax) * cH;
+            const c = BAR_COLORS[i % BAR_COLORS.length];
+            doc.setFillColor(c[0], c[1], c[2]);
+            doc.rect(x, cY + cH - h, bw, h, 'F');
+            
+            const label = d.total >= 1000 ? (d.total / 1000).toFixed(1) + 'k' : d.total.toString();
+            doc.setFontSize(6); doc.setTextColor(30, 41, 59);
+            doc.text(label, x + bw / 2, cY + cH - h - 2, { align: 'center' });
+        }
+        
+        doc.setFontSize(7); doc.setTextColor(80); doc.setFont(rf, 'normal');
+        const name = d.name.length > 9 ? d.name.substring(0, 8) + '.' : d.name;
+        doc.text(name, x + bw / 2, cY + cH + 5, { align: 'center' });
+    });
+
+    // Footer page 2
+    doc.setFontSize(7); doc.setTextColor(150);
+    doc.text(`Generated on: ${dateStr}`, 14, 200);
+    doc.text('The Tithe Department', 283, 200, { align: 'right' });
+
+    doc.save(`Period Report (${periodKey} ${year}).pdf`);
+};
