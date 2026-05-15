@@ -169,69 +169,25 @@ export const Analytics: React.FC = () => {
   const [reportFilter, setReportFilter] = useState<{ year: string; month: string; week: WeekOption }>({ year: selectedYear.toString(), month: 'Jan', week: 'All' });
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const periodicMonths = ['ALL_MONTHS', 'H1', 'H2', 'Q1', 'Q2', 'Q3', 'Q4'];
-
   const handleGenerateReport = async () => {
     setIsGenerating(true);
     try {
-      if (periodicMonths.includes(reportFilter.month)) {
-        // Periodic summary report (Annual, Half Year, Quarterly)
-        const { generatePeriodicReport } = await import('../lib/reportUtils');
+      if (reportFilter.month === 'ALL_MONTHS') {
+        // Annual summary report
+        const { generateAnnualReport } = await import('../lib/reportUtils');
         const year = parseInt(reportFilter.year);
 
-        let monthIndices: number[] = [];
-        let periodName = '';
-        if (reportFilter.month === 'ALL_MONTHS') {
-            monthIndices = [0,1,2,3,4,5,6,7,8,9,10,11];
-            periodName = `FISCAL YEAR ${year}`;
-        } else if (reportFilter.month === 'H1') {
-            monthIndices = [0,1,2,3,4,5];
-            periodName = `FIRST HALF (H1) ${year}`;
-        } else if (reportFilter.month === 'H2') {
-            monthIndices = [6,7,8,9,10,11];
-            periodName = `SECOND HALF (H2) ${year}`;
-        } else if (reportFilter.month === 'Q1') {
-            monthIndices = [0,1,2];
-            periodName = `FIRST QUARTER (Q1) ${year}`;
-        } else if (reportFilter.month === 'Q2') {
-            monthIndices = [3,4,5];
-            periodName = `SECOND QUARTER (Q2) ${year}`;
-        } else if (reportFilter.month === 'Q3') {
-            monthIndices = [6,7,8];
-            periodName = `THIRD QUARTER (Q3) ${year}`;
-        } else if (reportFilter.month === 'Q4') {
-            monthIndices = [9,10,11];
-            periodName = `FOURTH QUARTER (Q4) ${year}`;
-        }
+        // Build monthly totals from ALL transactions in the selected year
+        const yearTxns = transactions.filter(t => new Date(t.timestamp).getFullYear() === year);
 
-        // Build monthly totals and fellowship totals from filtered transactions
-        const periodTxns = transactions.filter(t => {
-            const d = new Date(t.timestamp);
-            return d.getFullYear() === year && monthIndices.includes(d.getMonth());
-        });
-
-        const monthlyTotals = monthIndices.map(idx => {
-          const total = periodTxns
+        const monthlyTotals = MONTHS.map((name, idx) => {
+          const total = yearTxns
             .filter(t => new Date(t.timestamp).getMonth() === idx)
             .reduce((sum, t) => sum + t.amount, 0);
-          return { name: MONTHS[idx], total };
+          return { name, total };
         });
 
-        const fellowshipMap: Record<string, number> = {};
-        FELLOWSHIPS.forEach(f => fellowshipMap[f] = 0);
-        periodTxns.forEach(t => {
-            if (fellowshipMap[t.fellowship] !== undefined) {
-                fellowshipMap[t.fellowship] += t.amount;
-            } else {
-                fellowshipMap[t.fellowship] = (fellowshipMap[t.fellowship] || 0) + t.amount;
-            }
-        });
-
-        const fellowshipTotals = Object.entries(fellowshipMap)
-            .map(([name, total]) => ({ name, total }))
-            .sort((a, b) => b.total - a.total); // Sort descending
-
-        await generatePeriodicReport(periodTxns, periodName, monthlyTotals, fellowshipTotals, LOGO_URL);
+        await generateAnnualReport(yearTxns, reportFilter.year, monthlyTotals, LOGO_URL);
       } else {
         // Existing per-month / per-week report
         const { generatePDFReport } = await import('../lib/reportUtils');
@@ -313,23 +269,11 @@ export const Analytics: React.FC = () => {
                     }}
                     className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700"
                   >
-                    <option value="ALL_MONTHS">Annual (All Months)</option>
-                    <optgroup label="Half Year">
-                      <option value="H1">H1 (Jan - Jun)</option>
-                      <option value="H2">H2 (Jul - Dec)</option>
-                    </optgroup>
-                    <optgroup label="Quarterly">
-                      <option value="Q1">Q1 (Jan - Mar)</option>
-                      <option value="Q2">Q2 (Apr - Jun)</option>
-                      <option value="Q3">Q3 (Jul - Sep)</option>
-                      <option value="Q4">Q4 (Oct - Dec)</option>
-                    </optgroup>
-                    <optgroup label="Monthly">
-                      {MONTHS.map(m => <option key={m} value={m}>{m}</option>)}
-                    </optgroup>
+                    <option value="ALL_MONTHS">All Months</option>
+                    {MONTHS.map(m => <option key={m} value={m}>{m}</option>)}
                   </select>
                 </div>
-                {!periodicMonths.includes(reportFilter.month) && (
+                {reportFilter.month !== 'ALL_MONTHS' && (
                   <div className="w-1/3">
                     <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Week</label>
                     <select
