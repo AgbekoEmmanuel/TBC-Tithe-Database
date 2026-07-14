@@ -319,7 +319,7 @@ export const useDataStore = create<DataState>((set, get) => ({
         ...txnToReverse,
         id: crypto.randomUUID(),
         amount: -txnToReverse.amount,
-        timestamp: new Date().toISOString(),
+        timestamp: txnToReverse.timestamp, // Keep original transaction date so reversal appears on same day in reports
         reversalOf: txnToReverse.id
       };
 
